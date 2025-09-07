@@ -66,24 +66,46 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>Dashboard</h1>
-        <div className="user-info">
-          <p>Welcome, {user?.name}!</p>
-          <button onClick={handleLogout} className="btn btn-secondary">
-            Logout
-          </button>
+    <div className="instagram-layout">
+      {/* Instagram-style Top Navigation */}
+      <header className="instagram-header">
+        <div className="header-content">
+          <h1 className="brand-name">DevConnector</h1>
+          <div className="header-actions">
+            <button className="icon-btn">
+              <span className="emoji-icon">❤️</span>
+            </button>
+            <button className="icon-btn">
+              <span className="emoji-icon">💬</span>
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {error && (
-        <div className="alert alert-danger">
-          {error}
-        </div>
-      )}
+      <main className="instagram-main">
+        {/* Stories Section */}
+        <section className="stories-section">
+          <div className="stories-container">
+            <div className="story-item">
+              <div className="story-avatar">
+                <div className="avatar-circle-small">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </div>
+                <div className="story-ring"></div>
+              </div>
+              <span className="story-label">Your story</span>
+            </div>
+            {/* Add more story items here */}
+          </div>
+        </section>
 
-      <div className="dashboard-content">
+        {error && (
+          <div className="alert alert-danger">
+            {error}
+          </div>
+        )}
+
+        <div className="feed-content">
         {profile ? (
           <div className="profile-exists">
             <div className="card">
@@ -222,7 +244,28 @@ const Dashboard = () => {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      </main>
+
+      {/* Instagram-style Bottom Navigation */}
+      <nav className="instagram-bottom-nav">
+        <Link to="/dashboard" className="nav-item active">
+          <span className="emoji-icon">🏠</span>
+          <span className="nav-label">Home</span>
+        </Link>
+        <Link to="/posts" className="nav-item">
+          <span className="emoji-icon">🔍</span>
+          <span className="nav-label">Search</span>
+        </Link>
+        <Link to="/create-profile" className="nav-item">
+          <span className="emoji-icon">➕</span>
+          <span className="nav-label">Create</span>
+        </Link>
+        <Link to="/profile" className="nav-item">
+          <span className="emoji-icon">👤</span>
+          <span className="nav-label">Profile</span>
+        </Link>
+      </nav>
     </div>
   );
 };
