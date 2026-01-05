@@ -113,11 +113,11 @@ DevConnector/
 
 ## Screenshots
 
-*(Add your own screenshots in your `/ScreenShots` folder and reference them here.)*
-
-| Landing Page                        | Dashboard                               |
-| ----------------------------------- | --------------------------------------- |
-| ![Landing](ScreenShots/landing.png) | ![Dashboard](ScreenShots/dashboard.png) |
+![alt text](<ScreenShots/Screenshot 2025-09-07 141334.png>)
+![alt text](<ScreenShots/Screenshot 2025-09-07 141413.png>)
+![alt text](<ScreenShots/Screenshot 2025-09-07 141642.png>)
+![alt text](<ScreenShots/Screenshot 2025-09-07 141713.png>)
+![alt text](<ScreenShots/Screenshot 2025-09-07 141929.png>)
 
 ## What I Learned
 
@@ -134,33 +134,4 @@ DevConnector/
 * Improve UI/UX with better design and responsiveness
 * Add notifications for likes/comments
 * Expand real-time features (chat, live feed updates)
-
-## License
-
-This project is open-source and available under the **MIT License**.
-
 ```
-
----
-
-### **Next Steps (Optional but Recommended)**
-
-**1. Add Screenshots:**  
-Replace `ScreenShots/landing.png` and `ScreenShots/dashboard.png` with your actual images. Visuals increase recruiter retention.
-
-![alt text](<ScreenShots/Screenshot 2025-09-07 141334.png>)
-![alt text](<ScreenShots/Screenshot 2025-09-07 141413.png>)
-![alt text](<ScreenShots/Screenshot 2025-09-07 141642.png>)
-![alt text](<ScreenShots/Screenshot 2025-09-07 141713.png>)
-![alt text](<ScreenShots/Screenshot 2025-09-07 141929.png>)
-
-**2. Create a Live Deployment:**  
-Host backend (Heroku/Render/AWS) and frontend (Vercel/Netlify) and add links in the README.
-
-**3. Add CI & Tests:**  
-Setup GitHub Actions for tests and linters (eslint for React, Jest for server routes).
-
-**4. Add License & Topics:**  
-Add `MIT` license file and repository topics like `MERN`, `React`, `Node.js`, `MongoDB`, `JWT`.
-
----
