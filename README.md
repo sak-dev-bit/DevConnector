@@ -1,8 +1,3 @@
-Here’s a **complete, recruiter-ready README.md** for your **DevConnector** project based on what’s visible in your repository and standard MERN social network features. You can copy this into your project root **replacing the existing README**.
-
----
-
-````md
 # DevConnector – A Developer Social Network
 
 ## Overview
