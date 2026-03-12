@@ -1,19 +1,25 @@
 import axios from 'axios';
 
+let accessToken = null;
+
+export const setAccessToken = (token) => {
+  accessToken = token;
+};
+
 // Create a new Axios instance with base configuration
 const api = axios.create({
   baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Important for refresh token cookies
 });
 
 // Request interceptor to add auth token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['x-auth-token'] = token;
+    if (accessToken) {
+      config.headers['x-auth-token'] = accessToken;
     }
     return config;
   },
@@ -27,11 +33,33 @@ api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If error is 401 and we haven't retried yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Attempt to refresh token
+        const res = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+
+        if (res.data.success) {
+          const { token } = res.data;
+          setAccessToken(token);
+
+          // Retry the original request with new token
+          originalRequest.headers['x-auth-token'] = token;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        // If refresh fails, redirect to login or handle as needed
+        console.error('Token refresh failed:', refreshError);
+        accessToken = null;
+        // Optional: window.location.href = '/login'; or trigger logout in AuthContext
+      }
     }
+
     return Promise.reject(error);
   }
 );

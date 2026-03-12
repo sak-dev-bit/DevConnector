@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import ImageUpload from '../layout/ImageUpload';
+import toast from 'react-hot-toast';
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -8,7 +10,9 @@ const EditProfile = () => {
   const [error, setError] = useState('');
   const [showSocialInputs, setShowSocialInputs] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
-  
+  const [avatar, setAvatar] = useState('');
+  const [avatarFile, setAvatarFile] = useState(null);
+
   const [formData, setFormData] = useState({
     company: '',
     website: '',
@@ -59,13 +63,14 @@ const EditProfile = () => {
       setProfileLoading(true);
       const res = await api.get('/profile/me');
       const profile = res.data;
-      
+
+      setAvatar(profile.user.avatar || '');
       setFormData({
         company: profile.company || '',
         website: profile.website || '',
         location: profile.location || '',
         status: profile.status || '',
-        skills: profile.skills ? profile.skills.join(', ') : '',
+        skills: Array.isArray(profile.skills) ? profile.skills.join(', ') : profile.skills || '',
         githubusername: profile.githubusername || '',
         bio: profile.bio || '',
         twitter: profile.social?.twitter || '',
@@ -94,6 +99,31 @@ const EditProfile = () => {
 
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleAvatarSelect = (file) => {
+    setAvatarFile(file);
+  };
+
+  const uploadAvatar = async () => {
+    if (!avatarFile) return;
+
+    const formData = new FormData();
+    formData.append('avatar', avatarFile);
+
+    try {
+      const res = await api.post('/profile/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      setAvatar(res.data.avatar);
+      setAvatarFile(null);
+      toast.success('Avatar updated!');
+    } catch (err) {
+      console.error('Avatar upload error:', err);
+      toast.error('Failed to upload avatar');
+    }
   };
 
   const onSubmit = async (e) => {
@@ -134,7 +164,7 @@ const EditProfile = () => {
       if (instagram.trim()) profileData.social.instagram = instagram.trim();
 
       const res = await api.post('/profile', profileData);
-      
+
       console.log('Profile updated:', res.data);
       navigate('/dashboard');
     } catch (err) {
@@ -176,6 +206,24 @@ const EditProfile = () => {
         )}
 
         <form onSubmit={onSubmit}>
+          <div className="avatar-upload-section" style={{ marginBottom: '2rem', textAlign: 'center' }}>
+            <ImageUpload
+              currentImage={avatar}
+              onUploadSuccess={handleAvatarSelect}
+              type="avatar"
+            />
+            {avatarFile && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={uploadAvatar}
+                style={{ marginTop: '0.5rem' }}
+              >
+                Upload New Avatar
+              </button>
+            )}
+          </div>
+
           <div className="form-group">
             <select
               name="status"

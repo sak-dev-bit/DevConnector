@@ -1,101 +1,86 @@
-# DevConnector - A Developer Social Network
+# DevConnector — The Social Network for Developers
 
-DevConnector is a social network platform built for developers to connect, share ideas, and showcase their skills. This is a full-stack application built using the MERN stack, with real-time features that make it feel dynamic and responsive.
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/your-username/DevConnector)
+[![MERN Stack](https://img.shields.io/badge/stack-MERN-blue)](https://mongodb.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
------
+## 💡 What problem does this solve?
 
-## Key Features
+Developers often work in silos, making it difficult to find collaborators, showcase specialized skills, or get peer feedback in a structured way. **DevConnector** bridges this gap by providing a dedicate space where developers can:
+- **Build a professional identity** that highlights both technical skills and real-world experience.
+- **Connect with peers** through a social feed, following/follower logic, and real-time interactions.
+- **Showcase proof of work** by integrating GitHub repositories directly into their profiles.
 
-  * **User Registration & Authentication**: Secure user sign-up and login using JWT (JSON Web Token) authentication.
-  * **User Profiles**: Create and manage detailed profiles with a bio, skills, experience, and GitHub repositories.
-  * **Post Management**: Full CRUD (Create, Read, Update, Delete) functionality for social media posts.
-  * **Interactive System**: Engage with content through a Like/Unlike and Comment system.
-  * **Follow/Unfollow System**: Connect with other users on the platform.
-  * **Image Uploads**: Store images for user avatars and posts.
+---
 
------
+## 🛠 Tech Stack
 
-## Technologies Used
+| Frontend | Backend | Database | Tools |
+| :--- | :--- | :--- | :--- |
+| ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) | ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white) | ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white) | ![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white) |
+| ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white) | ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white) | ![Mongoose](https://img.shields.io/badge/Mongoose-880000?style=for-the-badge&logo=mongoose&logoColor=white) | ![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socketdotio&logoColor=white) |
 
-### Frontend
+---
 
-  * **React**: For building the user interface.
-  * **React Router**: For handling client-side routing.
-  * **Axios**: For making API requests to the backend.
-  * **Socket.IO Client**: For real-time, bidirectional communication.
+## 🚀 Key Features
 
-### Backend
+*   **User Registration & Authentication**: Secure sign-up/login using **JWT** and **bcrypt.js**.
+*   **User Profiles**: Dynamic profiles featuring bios, skills, experience, and GitHub integration.
+*   **Post Management**: Full CRUD functionality with media support (Cloudinary integration).
+*   **Real-time Interactions**: Live notifications and instant updates using **Socket.IO**.
+*   **RESTful API**: Professionally audited endpoints following REST conventions (see [API.md](./API.md)).
+*   **Agile Methodology**: Managed with feature branching and Conventional Commits (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
 
-  * **Node.js & Express.js**: The server-side environment and web framework.
-  * **MongoDB & Mongoose**: The NoSQL database and its ODM for data modeling.
-  * **JWT & bcrypt.js**: For secure authentication and password hashing.
-  * **Multer**: A middleware for handling file uploads.
-  * **Socket.IO**: For real-time server-side events.
+---
 
-### Tools
+## 📸 Screenshots
 
-  * **Postman**: Used for testing all API endpoints.
-  * **Nodemon**: For automatic server restarts during development.
+| Dashboard | User Profile | Post Feed |
+| :---: | :---: | :---: |
+| ![Dashboard](ScreenShots/Screenshot%202025-09-07%20141334.png) | ![Profile](ScreenShots/Screenshot%202025-09-07%20141642.png) | ![Feed](ScreenShots/Screenshot%202025-09-07%20141929.png) |
 
------
+---
 
-## Setup & Installation
+## 🤖 Future Improvements (GenAI & Beyond)
 
-Follow these steps to get a local copy of the project up and running.
+-   **AI-Powered Bio Suggestions**: Integrate a Generative AI feature (e.g., Gemini or OpenAI API) to help developers craft compelling bios based on their listed skills and experience.
+-   **Automated Skill Tagging**: Use LLMs to analyze GitHub repository descriptions and automatically suggest relevant skill tags.
+-   **Intelligent Feed Curation**: Implement a recommendation system to surface posts most relevant to a developer's tech stack.
+
+---
+
+## 📦 Setup & Installation
 
 ### Prerequisites
+*   Node.js (v18+)
+*   MongoDB Atlas or Local MongoDB
+*   Cloudinary Account (for image uploads)
 
-  * Node.js (v14 or higher)
-  * MongoDB (A local instance or a cloud service like MongoDB Atlas)
-
-### 1\. Clone the Repository
-
+### 1. Clone & Install
 ```bash
 git clone https://github.com/your-username/DevConnector.git
 cd DevConnector
+# Install all dependencies
+npm install
 ```
 
-### 2\. Backend Setup
+### 2. Configure Environment
+Create a `.env` file in the `server` directory:
+```env
+MONGO_URI=your_mongodb_uri
+JWT_SECRET=your_jwt_secret
+CLOUDINARY_CLOUD_NAME=name
+CLOUDINARY_API_KEY=key
+CLOUDINARY_API_SECRET=secret
+```
 
-1.  Navigate into the `server` directory:
-    ```bash
-    cd server
-    ```
-2.  Install all backend dependencies:
-    ```bash
-    npm install
-    ```
-3.  Create a `.env` file in the `server` directory and add your configurations:
-    ```env
-    MONGO_URI=your_mongodb_connection_string
-    JWT_SECRET=a_long_random_string
-    ```
-4.  Start the backend server:
-    ```bash
-    npm run dev
-    ```
-    The server will run on `http://localhost:5000`.
+### 3. Run Application
+```bash
+# Run server & client concurrently
+npm run dev
+```
 
-### 3\. Frontend Setup
+---
 
-1.  Navigate into the `client` directory:
-    ```bash
-    cd ../client
-    ```
-2.  Install all frontend dependencies:
-    ```bash
-    npm install
-    ```
-3.  Start the React development server:
-    ```bash
-    npm start
-    ```
-    The app will open in your browser at `http://localhost:3000`.
-
------
-
-![alt text](<ScreenShots/Screenshot 2025-09-07 141334.png>)
-![alt text](<ScreenShots/Screenshot 2025-09-07 141413.png>)
-![alt text](<ScreenShots/Screenshot 2025-09-07 141642.png>)
-![alt text](<ScreenShots/Screenshot 2025-09-07 141713.png>)
-![alt text](<ScreenShots/Screenshot 2025-09-07 141929.png>)
+## ⚖️ License
+Distributed under the MIT License. See `LICENSE` for more information.

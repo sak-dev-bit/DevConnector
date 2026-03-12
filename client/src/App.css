@@ -14,6 +14,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -252,8 +253,8 @@ body {
 
 .dashboard-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
 }
 
 .card {
@@ -302,8 +303,13 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Profile Form Styles */
@@ -568,7 +574,7 @@ body {
   right: -3px;
   bottom: -3px;
   border-radius: 50%;
-  background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
   padding: 2px;
 }
 
@@ -846,11 +852,25 @@ body {
   transition: all 0.3s;
 }
 
-.social-btn.twitter { background: #1da1f2; }
-.social-btn.facebook { background: #3b5998; }
-.social-btn.linkedin { background: #0077b5; }
-.social-btn.youtube { background: #ff0000; }
-.social-btn.instagram { background: #e4405f; }
+.social-btn.twitter {
+  background: #1da1f2;
+}
+
+.social-btn.facebook {
+  background: #3b5998;
+}
+
+.social-btn.linkedin {
+  background: #0077b5;
+}
+
+.social-btn.youtube {
+  background: #ff0000;
+}
+
+.social-btn.instagram {
+  background: #e4405f;
+}
 
 .social-btn:hover {
   transform: translateY(-2px);
@@ -1123,6 +1143,7 @@ body {
     opacity: 0;
     transform: translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1148,6 +1169,29 @@ body {
   align-items: center;
   gap: 30px;
   box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@media (max-width: 768px) {
+  .profile-header-section {
+    flex-direction: column;
+    text-align: center;
+    padding: 30px 20px;
+    gap: 20px;
+  }
+
+  .profile-stats {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .profile-actions {
+    margin-left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .avatar-circle {
@@ -1344,6 +1388,8 @@ body {
 .description {
   margin-top: 10px;
   line-height: 1.6;
+}
+
 /* Post Feed Styles */
 .post-feed-container {
   max-width: 800px;
@@ -1445,6 +1491,19 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-top: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .post-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .post-actions .btn {
+    width: 100%;
+  }
 }
 
 .char-count {
@@ -1653,5 +1712,4 @@ body {
   font-size: 1rem;
   max-width: 400px;
   margin: 0 auto;
-}
 }

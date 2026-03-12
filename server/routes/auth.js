@@ -2,15 +2,34 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const rateLimit = require('express-rate-limit');
+const validate = require('../middleware/validate');
+const { authSchemas } = require('../validators/schemas');
 
 // Environment validation
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
+if (!process.env.JWT_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
+  throw new Error('JWT_SECRET and REFRESH_TOKEN_SECRET environment variables are required');
 }
+
+// Token helper functions
+const generateAccessToken = (user) => {
+  if (!process.env.JWT_SECRET) console.error('JWT_SECRET IS MISSING!');
+  return jwt.sign(
+    { user: { id: user.id, email: user.email } },
+    process.env.JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+};
+
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    { user: { id: user.id } },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: '7d' }
+  );
+};
 
 // Rate limiting for auth routes
 const authLimiter = rateLimit({
@@ -24,81 +43,48 @@ const authLimiter = rateLimit({
 
 router.use(authLimiter);
 
-// Validation rules
-const registerValidation = [
-  body('name')
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Name must be between 2 and 50 characters'),
-  body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email'),
-  body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one uppercase, lowercase, and number')
-];
-
-const loginValidation = [
-  body('email').isEmail().normalizeEmail(),
-  body('password').exists().withMessage('Password is required')
-];
-
 // @route    POST /api/auth/register
 // @desc     Register user
 // @access   Public
-router.post('/register', registerValidation, async (req, res) => {
+router.post('/register', validate(authSchemas.register), async (req, res) => {
   console.log('Registration attempt:', { name: req.body.name, email: req.body.email, passwordLength: req.body.password?.length });
-
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    console.log('Validation errors:', errors.array());
-    return res.status(400).json({
-      success: false,
-      errors: errors.array()
-    });
-  }
 
   const { name, email, password } = req.body;
 
   try {
     let user = await User.findOne({ email: email.toLowerCase() });
     if (user) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        msg: 'User already exists with this email' 
+        msg: 'User already exists with this email'
       });
     }
 
-    user = new User({ 
-      name: name.trim(), 
-      email: email.toLowerCase(), 
-      password 
+    user = new User({
+      name: name.trim(),
+      email: email.toLowerCase(),
+      password
     });
 
     const salt = await bcrypt.genSalt(12);
     user.password = await bcrypt.hash(password, salt);
 
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    user.refreshTokens = [refreshToken];
     await user.save();
 
-    const payload = {
-      user: {
-        id: user.id,
-        email: user.email
-      }
-    };
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
-    const token = jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.status(201).json({ 
+    res.status(201).json({
       success: true,
-      token,
+      token: accessToken,
       user: {
         id: user.id,
         name: user.name,
@@ -108,17 +94,17 @@ router.post('/register', registerValidation, async (req, res) => {
 
   } catch (err) {
     console.error('Registration error:', err.message);
-    
+
     if (err.code === 11000) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        msg: 'User already exists' 
+        msg: 'User already exists'
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       success: false,
-      msg: 'Server error during registration' 
+      msg: 'Server error during registration'
     });
   }
 });
@@ -126,15 +112,7 @@ router.post('/register', registerValidation, async (req, res) => {
 // @route    POST /api/auth/login
 // @desc     Login user
 // @access   Public
-router.post('/login', loginValidation, async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false,
-      errors: errors.array() 
-    });
-  }
-
+router.post('/login', validate(authSchemas.login), async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -154,22 +132,25 @@ router.post('/login', loginValidation, async (req, res) => {
       });
     }
 
-    const payload = {
-      user: {
-        id: user.id,
-        email: user.email
-      }
-    };
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    const token = jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    // Filter out expired/old tokens and add new one
+    // For simplicity here, we're just adding the new one. 
+    // In a full implementation, you'd periodically clean this up.
+    user.refreshTokens.push(refreshToken);
+    await user.save();
 
-    res.json({ 
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    res.json({
       success: true,
-      token,
+      token: accessToken,
       user: {
         id: user.id,
         name: user.name,
@@ -179,10 +160,106 @@ router.post('/login', loginValidation, async (req, res) => {
 
   } catch (err) {
     console.error('Login error:', err.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      msg: 'Server error during login' 
+      msg: 'Server error during login'
     });
+  }
+});
+
+// @route    POST /api/auth/refresh
+// @desc     Refresh access token
+// @access   Public (via Refresh Token Cookie)
+router.post('/refresh', async (req, res) => {
+  const cookies = req.cookies;
+  if (!cookies?.refreshToken) return res.status(401).json({ success: false, msg: 'No refresh token' });
+  const refreshToken = cookies.refreshToken;
+
+  try {
+    const user = await User.findOne({ refreshTokens: refreshToken });
+
+    // Detected refresh token reuse!
+    if (!user) {
+      jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET,
+        async (err, decoded) => {
+          if (err) return; // Expired or invalid anyway
+          // If we find an old token being reused, it's a security risk. 
+          // We could invalidate ALL tokens for that user ID.
+          const hackedUser = await User.findById(decoded.user.id);
+          if (hackedUser) {
+            hackedUser.refreshTokens = [];
+            await hackedUser.save();
+          }
+        }
+      );
+      return res.sendStatus(403); // Forbidden
+    }
+
+    const newRefreshTokens = user.refreshTokens.filter(rt => rt !== refreshToken);
+
+    // evaluate jwt 
+    jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET,
+      async (err, decoded) => {
+        if (err || user.id !== decoded.user.id) {
+          user.refreshTokens = [...newRefreshTokens];
+          await user.save();
+          return res.status(403).json({ success: false, msg: 'Invalid refresh token' });
+        }
+
+        // Refresh token is valid
+        const accessToken = generateAccessToken(user);
+        const newRefreshToken = generateRefreshToken(user);
+
+        // Update DB with new refresh token
+        user.refreshTokens = [...newRefreshTokens, newRefreshToken];
+        await user.save();
+
+        res.cookie('refreshToken', newRefreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({ success: true, token: accessToken });
+      }
+    );
+  } catch (err) {
+    console.error('Refresh token error:', err.message);
+    res.status(500).json({ success: false, msg: 'Server error during refresh' });
+  }
+});
+
+// @route    POST /api/auth/logout
+// @desc     Logout user & invalidate refresh token
+// @access   Public
+router.post('/logout', async (req, res) => {
+  const cookies = req.cookies;
+  if (!cookies?.refreshToken) {
+    return res.status(204).json({ success: true }); // No content
+  }
+  const refreshToken = cookies.refreshToken;
+
+  try {
+    const user = await User.findOne({ refreshTokens: refreshToken });
+    if (user) {
+      user.refreshTokens = user.refreshTokens.filter(rt => rt !== refreshToken);
+      await user.save();
+    }
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production'
+    });
+    res.json({ success: true, msg: 'Logged out successfully' });
+  } catch (err) {
+    console.error('Logout error:', err.message);
+    res.status(500).json({ success: false, msg: 'Server error during logout' });
   }
 });
 
@@ -193,13 +270,13 @@ router.get('/', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'User not found' 
+        msg: 'User not found'
       });
     }
-    
-    res.json({ 
+
+    res.json({
       success: true,
       user: {
         id: user.id,
@@ -212,9 +289,9 @@ router.get('/', auth, async (req, res) => {
     });
   } catch (err) {
     console.error('Get user error:', err.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      msg: 'Server error' 
+      msg: 'Server error'
     });
   }
 });

@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import api from '../services/api';
+import api, { setAccessToken } from '../services/api';
+import axios from 'axios';
+import { initSocket, disconnectSocket } from '../socket';
+import toast from 'react-hot-toast';
 
 // Initial state
 const initialState = {
-  token: localStorage.getItem('token'),
+  token: null,
   isAuthenticated: false,
   loading: true,
   user: null,
@@ -34,7 +37,7 @@ const authReducer = (state, action) => {
       };
     case actionTypes.AUTH_SUCCESS:
     case actionTypes.LOGIN_SUCCESS:
-      localStorage.setItem('token', action.payload.token);
+      setAccessToken(action.payload.token);
       return {
         ...state,
         token: action.payload.token,
@@ -45,7 +48,7 @@ const authReducer = (state, action) => {
       };
     case actionTypes.AUTH_ERROR:
     case actionTypes.LOGIN_FAIL:
-      localStorage.removeItem('token');
+      setAccessToken(null);
       return {
         ...state,
         token: null,
@@ -55,7 +58,7 @@ const authReducer = (state, action) => {
         error: action.payload,
       };
     case actionTypes.LOGOUT:
-      localStorage.removeItem('token');
+      setAccessToken(null);
       return {
         ...state,
         token: null,
@@ -83,17 +86,6 @@ export const AuthProvider = ({ children }) => {
 
   // Load user data
   const loadUser = async () => {
-    // Check if token exists in localStorage
-    if (!localStorage.getItem('token')) {
-      // Silent failure when no token is found during initial load
-      // This prevents showing an error when the user hasn't logged in yet
-      dispatch({
-        type: actionTypes.AUTH_ERROR,
-        payload: null,
-      });
-      return;
-    }
-
     try {
       const res = await api.get('/auth');
 
@@ -101,9 +93,27 @@ export const AuthProvider = ({ children }) => {
         type: actionTypes.USER_LOADED,
         payload: res.data.user,
       });
+
+      // Initialize socket after user is loaded
+      const socket = initSocket(res.data.user.id);
+
+      socket.off('notification'); // Prevent multiple listeners
+      socket.on('notification', (data) => {
+        if (data.type === 'LIKE') {
+          toast.success(`${data.senderName} liked your post!`, {
+            duration: 4000,
+            icon: '❤️'
+          });
+        } else if (data.type === 'COMMENT') {
+          toast.success(`${data.senderName} commented: "${data.text.substring(0, 20)}..."`, {
+            duration: 4000,
+            icon: '💬'
+          });
+        }
+      });
     } catch (error) {
       console.error('Load user error:', error.response?.data || error.message);
-      localStorage.removeItem('token'); // Remove invalid token
+      disconnectSocket();
       dispatch({
         type: actionTypes.AUTH_ERROR,
         payload: error.response?.data?.msg || 'Failed to load user',
@@ -111,9 +121,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Silent refresh on mount
+  const checkAuth = async () => {
+    try {
+      const res = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+      if (res.data.success) {
+        dispatch({
+          type: actionTypes.LOGIN_SUCCESS,
+          payload: { token: res.data.token, user: null }
+        });
+
+        // Load user data (this will also init socket)
+        await loadUser();
+      }
+    } catch (error) {
+      dispatch({
+        type: actionTypes.AUTH_ERROR,
+        payload: null
+      });
+    }
+  };
+
   // Register user
   const register = async (formData) => {
-    console.log('AuthContext register called with:', formData);
     try {
       const res = await api.post('/auth/register', formData);
 
@@ -121,9 +151,6 @@ export const AuthProvider = ({ children }) => {
         type: actionTypes.AUTH_SUCCESS,
         payload: res.data,
       });
-
-      // Wait for state update before calling loadUser
-      await new Promise(resolve => setTimeout(resolve, 0));
 
       // Load user data immediately after successful registration
       await loadUser();
@@ -146,10 +173,6 @@ export const AuthProvider = ({ children }) => {
         payload: res.data,
       });
 
-      // Wait for state update before calling loadUser
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // Load user data immediately after successful login
       await loadUser();
     } catch (error) {
       console.error('Login error:', error.response?.data || error.message);
@@ -161,7 +184,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout user
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    disconnectSocket();
     dispatch({ type: actionTypes.LOGOUT });
   };
 
@@ -171,16 +200,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      loadUser();
-    } else {
-      dispatch({
-        type: actionTypes.AUTH_ERROR,
-        payload: null
-      });
-    }
-  }, []); // Removed eslint-disable-next-line to allow proper dependency tracking
+    checkAuth();
+  }, []);
 
   return (
     <AuthContext.Provider

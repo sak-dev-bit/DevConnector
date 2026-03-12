@@ -22,6 +22,7 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  refreshTokens: [String],
   // Follow/Unfollow system
   following: [{
     user: {

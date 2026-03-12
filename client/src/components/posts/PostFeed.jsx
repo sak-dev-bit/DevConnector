@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import ImageUpload from '../layout/ImageUpload';
 
 const PostFeed = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newPost, setNewPost] = useState('');
+  const [postImage, setPostImage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
 
@@ -34,9 +36,22 @@ const PostFeed = () => {
 
     try {
       setSubmitting(true);
-      const res = await api.post('/posts', { text: newPost.trim() });
+
+      const formData = new FormData();
+      formData.append('text', newPost.trim());
+      if (postImage) {
+        formData.append('image', postImage);
+      }
+
+      const res = await api.post('/posts', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
       setPosts([res.data.post, ...posts]);
       setNewPost('');
+      setPostImage(null);
     } catch (err) {
       console.error('Error creating post:', err);
       setError(err.response?.data?.msg || 'Failed to create post');
@@ -45,9 +60,13 @@ const PostFeed = () => {
     }
   };
 
+  const handleImageSelect = (file) => {
+    setPostImage(file);
+  };
+
   const handleLike = async (postId) => {
     try {
-      const res = await api.put(`/posts/like/${postId}`);
+      const res = await api.post(`/posts/${postId}/like`);
       setPosts(posts.map(post =>
         post._id === postId
           ? { ...post, likes: res.data.likes, likesCount: res.data.likesCount }
@@ -106,7 +125,11 @@ const PostFeed = () => {
       <div className="create-post-card">
         <div className="post-author">
           <div className="avatar-circle">
-            {user?.name?.charAt(0).toUpperCase()}
+            {user?.avatar ? (
+              <img src={user.avatar} alt="User Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              user?.name?.charAt(0).toUpperCase()
+            )}
           </div>
           <span>{user?.name}</span>
         </div>
@@ -118,6 +141,9 @@ const PostFeed = () => {
             rows="3"
             maxLength="1000"
           />
+          <div className="post-image-upload" style={{ margin: '1rem 0' }}>
+            <ImageUpload type="post" onUploadSuccess={handleImageSelect} currentImage={null} />
+          </div>
           <div className="post-actions">
             <span className="char-count">{newPost.length}/1000</span>
             <button
@@ -144,7 +170,11 @@ const PostFeed = () => {
               <div className="post-header">
                 <div className="post-author">
                   <div className="avatar-circle">
-                    {post.name?.charAt(0).toUpperCase()}
+                    {post.avatar ? (
+                      <img src={post.avatar} alt="Author Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      post.name?.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div className="author-info">
                     <span className="author-name">{post.name}</span>

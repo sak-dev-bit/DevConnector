@@ -1,36 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
 const Post = require('../models/Post');
 const User = require('../models/User');
+const validate = require('../middleware/validate');
+const { postSchemas } = require('../validators/schemas');
+const rateLimit = require('express-rate-limit');
+const { sendNotification } = require('../socket');
+const { upload } = require('../services/cloudinary');
+
+const postLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // Limit each IP to 50 requests per window
+  message: {
+    success: false,
+    msg: 'Too many posts created from this IP, please try again after 15 minutes'
+  }
+});
+
+router.use(postLimiter);
 
 // @route    POST /api/posts
 // @desc     Create a post
 // @access   Private
-const postValidation = [
-  body('text')
-    .trim()
-    .isLength({ min: 1, max: 1000 })
-    .withMessage('Post text must be between 1 and 1000 characters')
-];
-
-router.post('/', [auth, postValidation], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false,
-      errors: errors.array() 
-    });
-  }
+router.post('/', [auth, upload.single('image'), validate(postSchemas.create)], async (req, res) => {
 
   try {
     const user = await User.findById(req.user.id).select('-password');
-    
+
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'User not found' 
+        msg: 'User not found'
       });
     }
 
@@ -39,7 +40,7 @@ router.post('/', [auth, postValidation], async (req, res) => {
       name: user.name,
       avatar: user.avatar,
       user: req.user.id,
-      image: req.body.image || null
+      image: req.file ? req.file.path : null
     });
 
     const post = await newPost.save();
@@ -51,9 +52,9 @@ router.post('/', [auth, postValidation], async (req, res) => {
     });
   } catch (err) {
     console.error('Create post error:', err.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      msg: 'Server error while creating post' 
+      msg: 'Server error while creating post'
     });
   }
 });
@@ -94,9 +95,9 @@ router.get('/', async (req, res) => {
     });
   } catch (err) {
     console.error('Get posts error:', err.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      msg: 'Server error while fetching posts' 
+      msg: 'Server error while fetching posts'
     });
   }
 });
@@ -110,9 +111,9 @@ router.get('/:id', async (req, res) => {
 
     // Validate ObjectId format
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        msg: 'Invalid post ID format' 
+        msg: 'Invalid post ID format'
       });
     }
 
@@ -121,9 +122,9 @@ router.get('/:id', async (req, res) => {
       .populate('comments.user', ['name', 'avatar']);
 
     if (!post) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
 
@@ -133,17 +134,17 @@ router.get('/:id', async (req, res) => {
     });
   } catch (err) {
     console.error('Get post error:', err.message);
-    
+
     if (err.kind === 'ObjectId') {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       success: false,
-      msg: 'Server error while fetching post' 
+      msg: 'Server error while fetching post'
     });
   }
 });
@@ -151,30 +152,23 @@ router.get('/:id', async (req, res) => {
 // @route    PUT /api/posts/:id
 // @desc     Update a post
 // @access   Private
-router.put('/:id', [auth, postValidation], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false,
-      errors: errors.array() 
-    });
-  }
+router.put('/:id', [auth, upload.single('image'), validate(postSchemas.create)], async (req, res) => {
 
   try {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
 
     // Check if user owns the post
     if (post.user.toString() !== req.user.id) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        msg: 'Not authorized to update this post' 
+        msg: 'Not authorized to update this post'
       });
     }
 
@@ -182,8 +176,9 @@ router.put('/:id', [auth, postValidation], async (req, res) => {
     post.text = req.body.text.trim();
     post.isEdited = true;
     post.editedAt = new Date();
-    if (req.body.image !== undefined) {
-      post.image = req.body.image;
+
+    if (req.file) {
+      post.image = req.file.path;
     }
 
     await post.save();
@@ -195,9 +190,9 @@ router.put('/:id', [auth, postValidation], async (req, res) => {
     });
   } catch (err) {
     console.error('Update post error:', err.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      msg: 'Server error while updating post' 
+      msg: 'Server error while updating post'
     });
   }
 });
@@ -210,54 +205,54 @@ router.delete('/:id', auth, async (req, res) => {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
 
     // Check if user owns the post
     if (post.user.toString() !== req.user.id) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        msg: 'Not authorized to delete this post' 
+        msg: 'Not authorized to delete this post'
       });
     }
 
     await Post.findByIdAndDelete(req.params.id);
 
-    res.json({ 
+    res.json({
       success: true,
-      msg: 'Post deleted successfully' 
+      msg: 'Post deleted successfully'
     });
   } catch (err) {
     console.error('Delete post error:', err.message);
-    
+
     if (err.kind === 'ObjectId') {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       success: false,
-      msg: 'Server error while deleting post' 
+      msg: 'Server error while deleting post'
     });
   }
 });
 
-// @route    PUT /api/posts/like/:id
+// @route    POST /api/posts/:id/like
 // @desc     Like/Unlike a post
 // @access   Private
-router.put('/like/:id', auth, async (req, res) => {
+router.post('/:id/like', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
 
@@ -282,6 +277,14 @@ router.put('/like/:id', auth, async (req, res) => {
       post.likes.unshift({ user: req.user.id });
       await post.save();
 
+      // Send real-time notification to post owner
+      if (post.user.toString() !== req.user.id) {
+        sendNotification(post.user, 'LIKE', {
+          senderName: 'Someone',
+          postId: post._id
+        });
+      }
+
       return res.json({
         success: true,
         msg: 'Post liked',
@@ -291,48 +294,34 @@ router.put('/like/:id', auth, async (req, res) => {
     }
   } catch (err) {
     console.error('Like/Unlike post error:', err.message);
-    
+
     if (err.kind === 'ObjectId') {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       success: false,
-      msg: 'Server error while processing like' 
+      msg: 'Server error while processing like'
     });
   }
 });
 
-// @route    POST /api/posts/comment/:id
+// @route    POST /api/posts/:id/comment
 // @desc     Comment on a post
 // @access   Private
-const commentValidation = [
-  body('text')
-    .trim()
-    .isLength({ min: 1, max: 500 })
-    .withMessage('Comment must be between 1 and 500 characters')
-];
-
-router.post('/comment/:id', [auth, commentValidation], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false,
-      errors: errors.array() 
-    });
-  }
+router.post('/:id/comment', [auth, validate(postSchemas.comment)], async (req, res) => {
 
   try {
     const user = await User.findById(req.user.id).select('-password');
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
 
@@ -350,6 +339,15 @@ router.post('/comment/:id', [auth, commentValidation], async (req, res) => {
     const updatedPost = await Post.findById(req.params.id)
       .populate('comments.user', ['name', 'avatar']);
 
+    // Send real-time notification to post owner
+    if (post.user.toString() !== req.user.id) {
+      sendNotification(post.user, 'COMMENT', {
+        senderName: user.name,
+        postId: post._id,
+        text: req.body.text
+      });
+    }
+
     res.json({
       success: true,
       msg: 'Comment added successfully',
@@ -357,32 +355,32 @@ router.post('/comment/:id', [auth, commentValidation], async (req, res) => {
     });
   } catch (err) {
     console.error('Add comment error:', err.message);
-    
+
     if (err.kind === 'ObjectId') {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       success: false,
-      msg: 'Server error while adding comment' 
+      msg: 'Server error while adding comment'
     });
   }
 });
 
-// @route    DELETE /api/posts/comment/:id/:comment_id
+// @route    DELETE /api/posts/:id/comment/:comment_id
 // @desc     Delete a comment
 // @access   Private
-router.delete('/comment/:id/:comment_id', auth, async (req, res) => {
+router.delete('/:id/comment/:comment_id', auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
 
@@ -392,17 +390,17 @@ router.delete('/comment/:id/:comment_id', auth, async (req, res) => {
     );
 
     if (!comment) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Comment not found' 
+        msg: 'Comment not found'
       });
     }
 
     // Check if user owns the comment or the post
     if (comment.user.toString() !== req.user.id && post.user.toString() !== req.user.id) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        msg: 'Not authorized to delete this comment' 
+        msg: 'Not authorized to delete this comment'
       });
     }
 
@@ -420,17 +418,17 @@ router.delete('/comment/:id/:comment_id', auth, async (req, res) => {
     });
   } catch (err) {
     console.error('Delete comment error:', err.message);
-    
+
     if (err.kind === 'ObjectId') {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        msg: 'Post not found' 
+        msg: 'Post not found'
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       success: false,
-      msg: 'Server error while deleting comment' 
+      msg: 'Server error while deleting comment'
     });
   }
 });
@@ -447,9 +445,9 @@ router.get('/user/:user_id', async (req, res) => {
 
     // Validate user_id format
     if (!user_id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        msg: 'Invalid user ID format' 
+        msg: 'Invalid user ID format'
       });
     }
 
@@ -474,9 +472,9 @@ router.get('/user/:user_id', async (req, res) => {
     });
   } catch (err) {
     console.error('Get user posts error:', err.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      msg: 'Server error while fetching user posts' 
+      msg: 'Server error while fetching user posts'
     });
   }
 });

@@ -19,6 +19,9 @@ const Profile = require('../models/Profile');
  */
 // Import the auth middleware instead of redefining it
 const auth = require('../middleware/auth');
+const validate = require('../middleware/validate');
+const { profileSchemas } = require('../validators/schemas');
+const { upload } = require('../services/cloudinary');
 
 // Custom middleware to attach user profile to request
 const attachUserProfile = async (req, res, next) => {
@@ -76,7 +79,7 @@ const handleApiError = (err, res, defaultMsg) => {
  * @desc Create or update user profile
  * @access Private
  */
-router.post('/', auth, async (req, res) => {
+router.post('/', [auth, validate(profileSchemas.upsert)], async (req, res) => {
     const {
         company,
         website,
@@ -159,11 +162,11 @@ router.get('/me', auth, attachUserProfile, async (req, res) => {
 });
 
 /**
- * @route PUT /api/profile/follow/:user_id
- * @desc Follow a user.
+ * @route POST /api/profile/:user_id/follow
+ * @desc Follow a user
  * @access Private
  */
-router.put('/follow/:user_id', auth, async (req, res) => {
+router.post('/:user_id/follow', auth, async (req, res) => {
     const { user_id } = req.params;
 
     if (!isValidObjectId(user_id)) {
@@ -221,11 +224,11 @@ router.put('/follow/:user_id', auth, async (req, res) => {
 
 // ---
 /**
- * @route PUT /api/profile/unfollow/:user_id
- * @desc Unfollow a user.
+ * @route DELETE /api/profile/:user_id/follow
+ * @desc Unfollow a user
  * @access Private
  */
-router.put('/unfollow/:user_id', auth, async (req, res) => {
+router.delete('/:user_id/follow', auth, async (req, res) => {
     const { user_id } = req.params;
 
     if (!isValidObjectId(user_id)) {
@@ -293,11 +296,11 @@ router.put('/unfollow/:user_id', auth, async (req, res) => {
 
 // ---
 /**
- * @route GET /api/profile/followers/:user_id
- * @desc Get user's followers with pagination.
+ * @route GET /api/profile/:user_id/followers
+ * @desc Get user's followers with pagination
  * @access Public
  */
-router.get('/followers/:user_id', async (req, res) => {
+router.get('/:user_id/followers', async (req, res) => {
     try {
         const { user_id } = req.params;
         const page = parseInt(req.query.page) || 1;
@@ -349,11 +352,11 @@ router.get('/followers/:user_id', async (req, res) => {
 
 // ---
 /**
- * @route GET /api/profile/following/:user_id
- * @desc Get users that a user is following with pagination.
+ * @route GET /api/profile/:user_id/following
+ * @desc Get users that a user is following with pagination
  * @access Public
  */
-router.get('/following/:user_id', async (req, res) => {
+router.get('/:user_id/following', async (req, res) => {
     try {
         const { user_id } = req.params;
         const page = parseInt(req.query.page) || 1;
@@ -404,11 +407,11 @@ router.get('/following/:user_id', async (req, res) => {
 
 // ---
 /**
- * @route GET /api/profile/follow-status/:user_id
- * @desc Check if current user is following another user.
+ * @route GET /api/profile/:user_id/follow-status
+ * @desc Check if current user is following another user
  * @access Private
  */
-router.get('/follow-status/:user_id', auth, async (req, res) => {
+router.get('/:user_id/follow-status', auth, async (req, res) => {
     try {
         const { user_id } = req.params;
 
@@ -445,9 +448,9 @@ router.get('/suggestions', auth, async (req, res) => {
         const suggestions = await User.find({
             _id: { $nin: followingIds }
         })
-        .select('name avatar followersCount')
-        .sort({ followersCount: -1, createdAt: -1 })
-        .limit(limit);
+            .select('name avatar followersCount')
+            .sort({ followersCount: -1, createdAt: -1 })
+            .limit(limit);
 
         res.json({
             success: true,
@@ -461,6 +464,60 @@ router.get('/suggestions', auth, async (req, res) => {
 
     } catch (err) {
         handleApiError(err, res, 'Server error while fetching suggestions');
+    }
+});
+
+/**
+ * @route DELETE /api/profile
+ * @desc Delete profile, user & posts
+ * @access Private
+ */
+router.delete('/', auth, async (req, res) => {
+    try {
+        // Remove user posts
+        const Post = require('../models/Post');
+        await Post.deleteMany({ user: req.user.id });
+
+        // Remove profile
+        await Profile.findOneAndDelete({ user: req.user.id });
+
+        // Remove user
+        await User.findOneAndDelete({ _id: req.user.id });
+
+        res.json({ success: true, msg: 'User deleted' });
+    } catch (err) {
+        console.error('Delete account error:', err.message);
+        res.status(500).json({ success: false, msg: 'Server error while deleting account' });
+    }
+});
+
+/**
+ * @route POST /api/profile/avatar
+ * @desc Upload or update user avatar
+ * @access Private
+ */
+router.post('/avatar', [auth, upload.single('avatar')], async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, msg: 'No file uploaded' });
+        }
+
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, msg: 'User not found' });
+        }
+
+        user.avatar = req.file.path; // Cloudinary URL
+        await user.save();
+
+        res.json({
+            success: true,
+            avatar: user.avatar,
+            msg: 'Avatar updated successfully'
+        });
+    } catch (err) {
+        console.error('Avatar upload error:', err.message);
+        res.status(500).json({ success: false, msg: 'Server error during avatar upload' });
     }
 });
 

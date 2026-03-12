@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { Toaster } from 'react-hot-toast';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './components/dashboard/Dashboard';
@@ -10,12 +11,14 @@ import CreateProfile from './components/profile-forms/CreateProfile';
 import EditProfile from './components/profile-forms/EditProfile';
 import PrivateRoute from './components/layout/PrivateRoute';
 import ThreeBackground from './components/ThreeBackground';
+import ForgotPassword from './pages/ForgotPassword';
+import AddExperience from './pages/AddExperience';
 import './App.css';
 
 // Landing component that handles the root route
 const Landing = () => {
   const { isAuthenticated, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="auth-container">
@@ -26,11 +29,11 @@ const Landing = () => {
       </div>
     );
   }
-  
+
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   return (
     <>
       <ThreeBackground />
@@ -58,12 +61,14 @@ const Landing = () => {
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" />
       <Router>
         <div className="App">
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route
               path="/dashboard"
               element={
@@ -101,6 +106,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <PostFeed />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/add-experience"
+              element={
+                <PrivateRoute>
+                  <AddExperience />
                 </PrivateRoute>
               }
             />
