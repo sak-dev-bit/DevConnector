@@ -118,7 +118,7 @@ router.post('/login', validate(authSchemas.login), async (req, res) => {
   try {
     let user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         msg: 'Invalid credentials'
       });
@@ -126,7 +126,7 @@ router.post('/login', validate(authSchemas.login), async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         msg: 'Invalid credentials'
       });

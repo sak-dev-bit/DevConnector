@@ -290,7 +290,7 @@ const Register = () => {
           Already have an account? <span 
             onClick={() => navigate('/login')} 
             className="link-text"
-            style={{ cursor: 'pointer', color: '#007bff', textDecoration: 'underline' }}
+            style={{ cursor: 'pointer', color: 'var(--primary-color)', textDecoration: 'underline' }}
           >
             Sign In
           </span>

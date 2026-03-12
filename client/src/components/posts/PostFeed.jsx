@@ -194,10 +194,10 @@ const PostFeed = () => {
 
               <div className="post-actions">
                 <button
-                  className={`like-btn ${post.likes?.some(like => like.user === user?.id) ? 'liked' : ''}`}
+                  className={`like-btn ${post.likes?.some(like => (like.user?._id || like.user)?.toString() === user?.id) ? 'liked' : ''}`}
                   onClick={() => handleLike(post._id)}
                 >
-                  <span className="emoji-icon">❤️</span> {post.likesCount || 0}
+                  <span className="emoji-icon">❤️</span> {post.likes?.length || 0}
                 </button>
                 <button className="comment-btn">
                   <span className="emoji-icon">💬</span> {post.comments?.length || 0}
@@ -210,8 +210,8 @@ const PostFeed = () => {
               {post.comments && post.comments.length > 0 && (
                 <div className="comments-section">
                   <h4>Comments</h4>
-                  {post.comments.slice(0, 3).map((comment, index) => (
-                    <div key={index} className="comment">
+                  {post.comments.slice(0, 3).map((comment) => (
+                    <div key={comment._id || comment.id} className="comment">
                       <div className="comment-author">
                         <div className="avatar-circle small">
                           {comment.name?.charAt(0).toUpperCase()}

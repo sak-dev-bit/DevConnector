@@ -146,12 +146,13 @@ router.post('/', [auth, validate(profileSchemas.upsert)], async (req, res) => {
  * @desc Get current user's profile
  * @access Private
  */
-router.get('/me', auth, attachUserProfile, async (req, res) => {
+router.get('/me', auth, async (req, res) => {
     try {
-        const profile = await Profile.findOne({ user: req.user.id }).populate('user', ['name', 'avatar']);
+        const profile = await Profile.findOne({ user: req.user.id })
+            .populate('user', ['name', 'avatar', 'followersCount', 'followingCount']);
 
         if (!profile) {
-            return res.status(404).json({ success: false, msg: 'Profile not found for this user' });
+            return res.status(404).json({ success: false, msg: 'There is no profile for this user' });
         }
 
         res.json(profile);
@@ -419,7 +420,10 @@ router.get('/:user_id/follow-status', auth, async (req, res) => {
             return res.status(400).json({ success: false, msg: 'Invalid user ID format' });
         }
 
-        const currentUser = req.userProfile; // Use the user object attached by the auth middleware
+        const currentUser = await User.findById(req.user.id).select('following');
+        if (!currentUser) {
+            return res.status(404).json({ success: false, msg: 'User not found' });
+        }
 
         const isFollowing = currentUser.following.some(
             follow => follow.user.toString() === user_id
@@ -440,7 +444,10 @@ router.get('/:user_id/follow-status', auth, async (req, res) => {
 router.get('/suggestions', auth, async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
-        const currentUser = req.userProfile; // Use the user object from the auth middleware
+        const currentUser = await User.findById(req.user.id).select('following');
+        if (!currentUser) {
+            return res.status(404).json({ success: false, msg: 'User not found' });
+        }
 
         const followingIds = currentUser.following.map(follow => follow.user);
         followingIds.push(req.user.id);

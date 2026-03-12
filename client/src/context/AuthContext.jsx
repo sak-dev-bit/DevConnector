@@ -126,19 +126,16 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
       if (res.data.success) {
-        dispatch({
-          type: actionTypes.LOGIN_SUCCESS,
-          payload: { token: res.data.token, user: null }
-        });
-
-        // Load user data (this will also init socket)
+        setAccessToken(res.data.token);
+        // Load user data (this will dispatch USER_LOADED and init socket)
         await loadUser();
+      } else {
+        // Not authenticated - just stop loading
+        dispatch({ type: actionTypes.AUTH_ERROR, payload: null });
       }
     } catch (error) {
-      dispatch({
-        type: actionTypes.AUTH_ERROR,
-        payload: null
-      });
+      // Refresh failed (user not logged in) - clear loading state cleanly
+      dispatch({ type: actionTypes.AUTH_ERROR, payload: null });
     }
   };
 

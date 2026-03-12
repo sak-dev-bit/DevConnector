@@ -62,18 +62,18 @@ body {
   backdrop-filter: blur(20px);
   border-radius: 24px;
   margin: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 .auth-form {
   background: rgba(30, 41, 59, 0.9);
   padding: 40px;
   border-radius: 24px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
   width: 100%;
   max-width: 400px;
   backdrop-filter: blur(25px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--border-color);
   position: relative;
   overflow: hidden;
 }
@@ -128,7 +128,7 @@ body {
 .form-text {
   display: block;
   margin-top: 5px;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -168,12 +168,12 @@ body {
 }
 
 .btn-secondary {
-  background: #6c757d;
+  background: var(--border-color);
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #5a6268;
+  background: var(--border-color);
 }
 
 .btn-secondary:disabled {
@@ -206,9 +206,9 @@ body {
 }
 
 .alert-danger {
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
+  background-color: var(--error-color);
+  border: 1px solid var(--error-color);
+  color: var(--error-color);
 }
 
 /* Dashboard Styles */
@@ -222,7 +222,7 @@ body {
   background: var(--card-bg);
   padding: 30px;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   margin-bottom: 30px;
   display: flex;
   justify-content: space-between;
@@ -261,7 +261,7 @@ body {
   background: var(--card-bg);
   padding: 30px;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   text-align: center;
   transition: transform 0.3s, box-shadow 0.3s;
   border: 1px solid var(--border-color);
@@ -269,7 +269,7 @@ body {
 
 .card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
   border-color: var(--primary-color);
 }
 
@@ -319,14 +319,14 @@ body {
   align-items: flex-start;
   min-height: 100vh;
   padding: 20px;
-  background: #f4f4f4;
+  background: var(--dark-bg);
 }
 
 .profile-form {
-  background: white;
+  background: var(--card-bg);
   padding: 40px;
   border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
   width: 100%;
   max-width: 800px;
 }
@@ -337,18 +337,18 @@ body {
 }
 
 .form-header h1 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 10px;
   font-size: 2.2rem;
 }
 
 .form-header p {
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 10px;
 }
 
 .form-header small {
-  color: #999;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -361,18 +361,18 @@ body {
 .profile-form .form-group textarea {
   width: 100%;
   padding: 12px 15px;
-  border: 2px solid #ddd;
+  border: 2px solid var(--border-color);
   border-radius: 5px;
   font-size: 16px;
   transition: border-color 0.3s, box-shadow 0.3s;
-  background: #fff;
+  background: var(--text-primary);
 }
 
 .profile-form .form-group input:focus,
 .profile-form .form-group select:focus,
 .profile-form .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -384,7 +384,7 @@ body {
 .profile-form .form-text {
   display: block;
   margin-top: 8px;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.4;
 }
@@ -395,13 +395,13 @@ body {
   gap: 15px;
   margin: 30px 0 20px 0;
   padding: 20px;
-  background: #f8f9fa;
+  background: var(--dark-bg);
   border-radius: 8px;
 }
 
 .social-toggle .btn {
   padding: 10px 20px;
-  background: #6c757d;
+  background: var(--border-color);
   color: white;
   border: none;
   border-radius: 5px;
@@ -411,19 +411,19 @@ body {
 }
 
 .social-toggle .btn:hover {
-  background: #5a6268;
+  background: var(--border-color);
 }
 
 .social-toggle span {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .social-inputs {
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--dark-bg);
   border-radius: 8px;
   padding: 25px;
-  background: #f8f9fa;
+  background: var(--dark-bg);
   margin-bottom: 20px;
 }
 
@@ -435,19 +435,19 @@ body {
   display: flex;
   align-items: center;
   gap: 15px;
-  background: white;
-  border: 2px solid #ddd;
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
   border-radius: 5px;
   padding: 5px 15px;
   transition: border-color 0.3s;
 }
 
 .input-icon:focus-within {
-  border-color: #667eea;
+  border-color: var(--primary-color);
 }
 
 .input-icon i {
-  color: #666;
+  color: var(--text-secondary);
   width: 30px;
   text-align: center;
 }
@@ -532,7 +532,7 @@ body {
 }
 
 .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-color);
 }
 
 /* Stories Section */
@@ -728,7 +728,7 @@ body {
   padding: 30px;
   border-radius: 16px;
   margin: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   border: 1px solid var(--border-color);
 }
 
@@ -766,17 +766,17 @@ body {
   text-align: center;
   margin-bottom: 25px;
   padding-bottom: 20px;
-  border-bottom: 2px solid #eee;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .profile-header h3 {
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.8rem;
   margin-bottom: 5px;
 }
 
 .profile-header .status {
-  color: #667eea;
+  color: var(--primary-color);
   font-weight: 600;
   font-size: 1.1rem;
   margin: 5px 0;
@@ -788,7 +788,7 @@ body {
 .social-links {
   margin: 20px 0;
   padding: 15px;
-  background: #f8f9fa;
+  background: var(--dark-bg);
   border-radius: 8px;
 }
 
@@ -796,7 +796,7 @@ body {
 .profile-skills h4,
 .github-info h4,
 .social-links h4 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 10px;
   font-size: 1.1rem;
 }
@@ -809,7 +809,7 @@ body {
 }
 
 .skill-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color) 100%);
   color: white;
   padding: 5px 12px;
   border-radius: 20px;
@@ -818,11 +818,11 @@ body {
 }
 
 .github-link {
-  color: #333;
+  color: var(--text-primary);
   text-decoration: none;
   font-weight: 600;
   font-family: 'Courier New', monospace;
-  background: #f1f3f4;
+  background: var(--dark-bg);
   padding: 8px 12px;
   border-radius: 5px;
   display: inline-block;
@@ -830,7 +830,7 @@ body {
 }
 
 .github-link:hover {
-  background: #667eea;
+  background: var(--primary-color);
   color: white;
   transform: translateY(-2px);
 }
@@ -853,28 +853,28 @@ body {
 }
 
 .social-btn.twitter {
-  background: #1da1f2;
+  background: var(--primary-color);
 }
 
 .social-btn.facebook {
-  background: #3b5998;
+  background: var(--primary-color);
 }
 
 .social-btn.linkedin {
-  background: #0077b5;
+  background: var(--primary-color);
 }
 
 .social-btn.youtube {
-  background: #ff0000;
+  background: var(--primary-color);
 }
 
 .social-btn.instagram {
-  background: #e4405f;
+  background: var(--primary-color);
 }
 
 .social-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 .profile-actions {
@@ -890,23 +890,23 @@ body {
 }
 
 .btn-danger {
-  background: #dc3545;
+  background: var(--error-color);
   color: white;
 }
 
 .btn-danger:hover {
-  background: #c82333;
+  background: var(--error-color);
 }
 
 .btn-light {
-  background: #f8f9fa;
-  color: #495057;
-  border: 2px solid #ddd;
+  background: var(--dark-bg);
+  color: var(--border-color);
+  border: 2px solid var(--border-color);
 }
 
 .btn-light:hover {
-  background: #e9ecef;
-  border-color: #adb5bd;
+  background: var(--dark-bg);
+  border-color: var(--border-color);
 }
 
 .experience-education {
@@ -914,28 +914,28 @@ body {
 }
 
 .experience-section h3 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 15px;
   font-size: 1.3rem;
 }
 
 .experience-item {
-  background: #f8f9fa;
+  background: var(--dark-bg);
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 15px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--primary-color);
 }
 
 .experience-item h4 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 5px;
   font-size: 1.1rem;
 }
 
 .experience-item p {
   margin: 5px 0;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .no-profile {
@@ -951,9 +951,9 @@ body {
 
 .feature-list li {
   padding: 10px 0;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.1rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .feature-list li:last-child {
@@ -965,16 +965,16 @@ body {
   position: fixed;
   top: 20px;
   right: 20px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   min-width: 300px;
   max-width: 500px;
   z-index: 1000;
   opacity: 0;
   transform: translateX(400px);
   transition: all 0.3s ease-in-out;
-  border-left: 4px solid #dc3545;
+  border-left: 4px solid var(--error-color);
 }
 
 .toast.success {
@@ -982,7 +982,7 @@ body {
 }
 
 .toast.info {
-  border-left-color: #17a2b8;
+  border-left-color: var(--success-color);
 }
 
 .toast.show {
@@ -1009,7 +1009,7 @@ body {
 
 .toast-message {
   flex: 1;
-  color: #333;
+  color: var(--text-primary);
   font-size: 14px;
   line-height: 1.4;
 }
@@ -1018,7 +1018,7 @@ body {
   background: none;
   border: none;
   font-size: 20px;
-  color: #666;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0;
   width: 20px;
@@ -1121,7 +1121,7 @@ body {
 
 /* Field validation error styles */
 .field-error {
-  color: #dc3545;
+  color: var(--error-color);
   font-size: 0.875rem;
   margin-top: 0.5rem;
   font-weight: 500;
@@ -1129,7 +1129,7 @@ body {
 }
 
 .form-group.error input {
-  border-color: #dc3545 !important;
+  border-color: var(--error-color) !important;
   background-color: #fff5f5;
 }
 
@@ -1198,14 +1198,14 @@ body {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 3rem;
   font-weight: bold;
   backdrop-filter: blur(10px);
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  border: 3px solid var(--border-color);
 }
 
 .profile-info h1 {
@@ -1232,7 +1232,7 @@ body {
   gap: 30px;
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-color);
 }
 
 .stat-item {
@@ -1270,7 +1270,7 @@ body {
   background: var(--card-bg);
   border-radius: 15px;
   padding: 30px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.5);
   border: 1px solid var(--border-color);
 }
 
@@ -1284,10 +1284,10 @@ body {
 }
 
 .profile-card {
-  background: #f8f9fa;
+  background: var(--dark-bg);
   padding: 25px;
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0,0,0,0.5);
 }
 
 .skills-grid {
@@ -1325,18 +1325,18 @@ body {
   align-items: center;
   gap: 10px;
   padding: 12px 20px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 10px;
   text-decoration: none;
-  color: #333;
+  color: var(--text-primary);
   font-weight: 500;
   transition: all 0.3s;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0,0,0,0.5);
 }
 
 .social-link:hover {
   transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
 }
 
 .experience-list,
@@ -1347,11 +1347,11 @@ body {
 
 .experience-item,
 .education-item {
-  background: white;
+  background: var(--card-bg);
   padding: 25px;
   border-radius: 12px;
-  border-left: 4px solid #667eea;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid var(--primary-color);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
   transition: transform 0.2s;
 }
 
@@ -1362,7 +1362,7 @@ body {
 
 .experience-item h3,
 .education-item h3 {
-  color: #333;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
   font-size: 1.2rem;
 }
@@ -1370,18 +1370,18 @@ body {
 .experience-item p,
 .education-item p {
   margin: 5px 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.95rem;
 }
 
 .company,
 .degree {
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .duration {
-  color: #667eea;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
@@ -1405,7 +1405,7 @@ body {
 }
 
 .post-feed-header h1 {
-  color: #333;
+  color: var(--text-primary);
   font-size: 2.5rem;
   margin-bottom: 10px;
   font-weight: 700;
@@ -1443,7 +1443,7 @@ body {
   border-radius: 15px;
   padding: 30px;
   margin-bottom: 30px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.5);
   border: 1px solid var(--border-color);
 }
 
@@ -1507,7 +1507,7 @@ body {
 }
 
 .char-count {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -1520,7 +1520,7 @@ body {
   background: var(--card-bg);
   border-radius: 12px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
   border: 1px solid var(--border-color);
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -1528,7 +1528,7 @@ body {
 
 .post-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 .post-header {
@@ -1640,7 +1640,7 @@ body {
 }
 
 .comments-section h4 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 15px;
   font-size: 1rem;
 }
@@ -1650,7 +1650,7 @@ body {
   gap: 12px;
   margin-bottom: 15px;
   padding: 15px;
-  background: #f8f9fa;
+  background: var(--dark-bg);
   border-radius: 10px;
 }
 
@@ -1670,7 +1670,7 @@ body {
 
 .comment-author .author-name {
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   font-size: 0.9rem;
 }
 
@@ -1682,7 +1682,7 @@ body {
 }
 
 .more-comments {
-  color: #667eea;
+  color: var(--primary-color);
   font-size: 0.9rem;
   text-align: center;
   padding: 10px;
@@ -1696,19 +1696,19 @@ body {
 .no-posts {
   text-align: center;
   padding: 60px 20px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 15px;
-  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 3px 15px rgba(0,0,0,0.5);
 }
 
 .no-posts h3 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 10px;
   font-size: 1.5rem;
 }
 
 .no-posts p {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 1rem;
   max-width: 400px;
   margin: 0 auto;

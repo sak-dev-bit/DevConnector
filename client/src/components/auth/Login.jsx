@@ -177,7 +177,7 @@ const Login = () => {
           Don't have an account? <span 
             onClick={() => navigate('/register')} 
             className="link-text"
-            style={{ cursor: 'pointer', color: '#007bff', textDecoration: 'underline' }}
+            style={{ cursor: 'pointer', color: 'var(--primary-color)', textDecoration: 'underline' }}
           >
             Sign Up
           </span>
