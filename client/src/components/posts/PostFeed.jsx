@@ -1,30 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-import ImageUpload from '../layout/ImageUpload';
+import toast from 'react-hot-toast';
+
+const timeAgo = (date) => {
+  const s = Math.floor((Date.now() - new Date(date)) / 1000);
+  if (s < 60)   return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+const SkeletonPost = () => (
+  <div className="post-card" style={{ padding: 'var(--space-4)' }}>
+    <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+      <div className="skeleton skeleton-circle" style={{ width: 40, height: 40 }} />
+      <div style={{ flex: 1 }}>
+        <div className="skeleton" style={{ width: '40%', height: 14, marginBottom: 6 }} />
+        <div className="skeleton" style={{ width: '25%', height: 11 }} />
+      </div>
+    </div>
+    <div className="skeleton" style={{ width: '100%', height: 14, marginBottom: 6 }} />
+    <div className="skeleton" style={{ width: '80%', height: 14 }} />
+  </div>
+);
 
 const PostFeed = () => {
+  const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [newPost, setNewPost] = useState('');
-  const [postImage, setPostImage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const { user } = useAuth();
+  const [commentInputs, setCommentInputs] = useState({});
+  const [expandedComments, setExpandedComments] = useState({});
+  const textareaRef = useRef();
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
+  useEffect(() => { fetchPosts(); }, []);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
       const res = await api.get('/posts');
       setPosts(res.data.posts || []);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching posts:', err);
-      setError(err.response?.data?.msg || 'Failed to load posts');
+    } catch {
+      toast.error('Failed to load posts');
     } finally {
       setLoading(false);
     }
@@ -33,205 +52,189 @@ const PostFeed = () => {
   const handleSubmitPost = async (e) => {
     e.preventDefault();
     if (!newPost.trim()) return;
-
     try {
       setSubmitting(true);
-
       const formData = new FormData();
       formData.append('text', newPost.trim());
-      if (postImage) {
-        formData.append('image', postImage);
-      }
-
-      const res = await api.post('/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      setPosts([res.data.post, ...posts]);
+      const res = await api.post('/posts', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setPosts(prev => [res.data.post, ...prev]);
       setNewPost('');
-      setPostImage(null);
+      toast.success('Post published!');
     } catch (err) {
-      console.error('Error creating post:', err);
-      setError(err.response?.data?.msg || 'Failed to create post');
+      toast.error(err.response?.data?.msg || 'Failed to publish post');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleImageSelect = (file) => {
-    setPostImage(file);
-  };
-
   const handleLike = async (postId) => {
     try {
       const res = await api.post(`/posts/${postId}/like`);
-      setPosts(posts.map(post =>
-        post._id === postId
-          ? { ...post, likes: res.data.likes, likesCount: res.data.likesCount }
-          : post
+      setPosts(prev => prev.map(p =>
+        p._id === postId ? { ...p, likes: res.data.likes } : p
       ));
-    } catch (err) {
-      console.error('Error liking post:', err);
-      setError(err.response?.data?.msg || 'Failed to like post');
-    }
+    } catch { toast.error('Could not update like'); }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleAddComment = async (postId) => {
+    const text = commentInputs[postId]?.trim();
+    if (!text) return;
+    try {
+      const res = await api.post(`/posts/${postId}/comment`, { text });
+      setPosts(prev => prev.map(p =>
+        p._id === postId ? { ...p, comments: res.data.comments } : p
+      ));
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+    } catch { toast.error('Could not add comment'); }
   };
 
-  if (loading) {
-    return (
-      <div className="post-feed-container">
-        <div className="spinner-container">
-          <div className="spinner"></div>
-          <p>Loading posts...</p>
-        </div>
-      </div>
-    );
-  }
+  const isLiked = (post) =>
+    post.likes?.some(l => (l.user?._id || l.user)?.toString() === user?.id);
 
   return (
-    <div className="post-feed-container">
-      <div className="post-feed-header">
-        <h1><span className="emoji-icon">🚀</span> Developer Feed</h1>
-        <p>Share your thoughts and connect with other developers</p>
-        <div className="feed-stats">
-          <span className="stat-badge">
-            <span className="emoji-icon">📝</span> {posts.length} Posts
-          </span>
-          <span className="stat-badge">
-            <span className="emoji-icon">👥</span> Community
-          </span>
-        </div>
-      </div>
-
-      {error && (
-        <div className="alert alert-danger">
-          {error}
-        </div>
-      )}
-
-      {/* Create Post Form */}
-      <div className="create-post-card">
-        <div className="post-author">
-          <div className="avatar-circle">
-            {user?.avatar ? (
-              <img src={user.avatar} alt="User Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-            ) : (
-              user?.name?.charAt(0).toUpperCase()
-            )}
+    <div>
+      {/* Create post */}
+      <div className="create-post dc-card" style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="create-post__top">
+          <div className={`dc-avatar dc-avatar--md`}>
+            {user?.avatar
+              ? <img src={user.avatar} alt={user.name} />
+              : user?.name?.charAt(0)}
           </div>
-          <span>{user?.name}</span>
+          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{user?.name}</span>
         </div>
-        <form onSubmit={handleSubmitPost} className="post-form">
+        <form onSubmit={handleSubmitPost}>
           <textarea
+            ref={textareaRef}
             value={newPost}
-            onChange={(e) => setNewPost(e.target.value)}
-            placeholder="What's on your mind?"
-            rows="3"
-            maxLength="1000"
+            onChange={e => setNewPost(e.target.value)}
+            placeholder="What's on your mind? Share code, ideas, questions..."
+            rows={3}
+            maxLength={1000}
+            onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleSubmitPost(e); }}
           />
-          <div className="post-image-upload" style={{ margin: '1rem 0' }}>
-            <ImageUpload type="post" onUploadSuccess={handleImageSelect} currentImage={null} />
-          </div>
-          <div className="post-actions">
-            <span className="char-count">{newPost.length}/1000</span>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={!newPost.trim() || submitting}
-            >
-              {submitting ? 'Posting...' : 'Post'}
-            </button>
+          <div className="create-post__bottom">
+            <span className="char-count" style={{ color: newPost.length > 900 ? 'var(--danger)' : undefined }}>
+              {newPost.length}/1000
+            </span>
+            <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Ctrl+Enter to post</span>
+              <button
+                type="submit"
+                className="btn btn-primary btn-sm"
+                disabled={!newPost.trim() || submitting}
+              >
+                {submitting
+                  ? <><div className="dc-spinner dc-spinner--sm" style={{ borderTopColor: '#fff' }}></div> Posting...</>
+                  : '📤 Post'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
 
-      {/* Posts Feed */}
-      <div className="posts-list">
-        {posts.length === 0 ? (
+      {/* Feed */}
+      {loading
+        ? [1, 2, 3].map(k => <SkeletonPost key={k} />)
+        : posts.length === 0 ? (
           <div className="no-posts">
+            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-3)' }}>🚀</div>
             <h3>No posts yet</h3>
             <p>Be the first to share something with the community!</p>
           </div>
-        ) : (
-          posts.map((post) => (
+        ) : posts.map(post => {
+          const liked = isLiked(post);
+          const comments = post.comments || [];
+          const showAll = expandedComments[post._id];
+          const visibleComments = showAll ? comments : comments.slice(0, 2);
+          return (
             <div key={post._id} className="post-card">
-              <div className="post-header">
-                <div className="post-author">
-                  <div className="avatar-circle">
-                    {post.avatar ? (
-                      <img src={post.avatar} alt="Author Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                    ) : (
-                      post.name?.charAt(0).toUpperCase()
-                    )}
-                  </div>
-                  <div className="author-info">
-                    <span className="author-name">{post.name}</span>
-                    <span className="post-date">{formatDate(post.createdAt)}</span>
-                  </div>
+              <div className="post-card__header">
+                <div className="dc-avatar dc-avatar--md">
+                  {post.avatar
+                    ? <img src={post.avatar} alt={post.name} />
+                    : post.name?.charAt(0)}
+                </div>
+                <div className="post-card__meta">
+                  <div className="post-card__author">{post.name}</div>
+                  <div className="post-card__time">{timeAgo(post.createdAt)}{post.isEdited && ' · edited'}</div>
                 </div>
               </div>
 
-              <div className="post-content">
-                <p>{post.text}</p>
+              <div className="post-card__body">
+                <p className="post-card__text">{post.text}</p>
                 {post.image && (
-                  <div className="post-image">
-                    <img src={post.image} alt="Post content" />
+                  <div className="post-card__image">
+                    <img src={post.image} alt="Post" />
                   </div>
                 )}
               </div>
 
-              <div className="post-actions">
+              <div className="post-card__actions">
                 <button
-                  className={`like-btn ${post.likes?.some(like => (like.user?._id || like.user)?.toString() === user?.id) ? 'liked' : ''}`}
+                  className={`post-card__action-btn ${liked ? 'liked' : ''}`}
                   onClick={() => handleLike(post._id)}
+                  title={liked ? 'Unlike' : 'Like'}
                 >
-                  <span className="emoji-icon">❤️</span> {post.likes?.length || 0}
+                  <span className="like-icon">{liked ? '❤️' : '🤍'}</span>
+                  {post.likes?.length || 0}
                 </button>
-                <button className="comment-btn">
-                  <span className="emoji-icon">💬</span> {post.comments?.length || 0}
-                </button>
-                <button className="share-btn">
-                  <span className="emoji-icon">🔗</span> Share
+                <button className="post-card__action-btn" title="Comments">
+                  💬 {comments.length}
                 </button>
               </div>
 
-              {post.comments && post.comments.length > 0 && (
+              {/* Comments */}
+              {comments.length > 0 && (
                 <div className="comments-section">
-                  <h4>Comments</h4>
-                  {post.comments.slice(0, 3).map((comment) => (
-                    <div key={comment._id || comment.id} className="comment">
-                      <div className="comment-author">
-                        <div className="avatar-circle small">
-                          {comment.name?.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="author-name">{comment.name}</span>
+                  {visibleComments.map(comment => (
+                    <div key={comment._id || comment.id} className="comment-item">
+                      <div className="dc-avatar dc-avatar--sm">
+                        {comment.avatar
+                          ? <img src={comment.avatar} alt={comment.name} />
+                          : comment.name?.charAt(0)}
                       </div>
-                      <p className="comment-text">{comment.text}</p>
+                      <div className="comment-item__body">
+                        <div className="comment-item__header">
+                          <span className="comment-item__author">{comment.name}</span>
+                          {comment.createdAt && <span className="comment-item__time">{timeAgo(comment.createdAt)}</span>}
+                        </div>
+                        <div className="comment-item__text">{comment.text}</div>
+                      </div>
                     </div>
                   ))}
-                  {post.comments.length > 3 && (
-                    <p className="more-comments">
-                      View all {post.comments.length} comments
-                    </p>
+                  {comments.length > 2 && !showAll && (
+                    <button className="comments-more" onClick={() => setExpandedComments(prev => ({ ...prev, [post._id]: true }))}>
+                      View all {comments.length} comments
+                    </button>
                   )}
                 </div>
               )}
+
+              {/* Add comment */}
+              <div className="add-comment-form">
+                <div className="dc-avatar dc-avatar--sm">
+                  {user?.avatar ? <img src={user.avatar} alt={user.name} /> : user?.name?.charAt(0)}
+                </div>
+                <input
+                  type="text"
+                  placeholder="Add a comment..."
+                  value={commentInputs[post._id] || ''}
+                  onChange={e => setCommentInputs(prev => ({ ...prev, [post._id]: e.target.value }))}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddComment(post._id); }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddComment(post._id)}
+                  disabled={!commentInputs[post._id]?.trim()}
+                >
+                  Post
+                </button>
+              </div>
             </div>
-          ))
-        )}
-      </div>
+          );
+        })
+      }
     </div>
   );
 };

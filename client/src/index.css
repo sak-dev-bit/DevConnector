@@ -1,48 +1,109 @@
+/* ==============================
+   DEVCONNECTOR DESIGN SYSTEM
+   ============================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 :root {
-  --primary-color: #58A6FF;
-  --secondary-color: #1F6FEB;
-  --accent-color: #58A6FF;
-  --dark-bg: #0D1117;
-  --card-bg: #161B22;
-  --text-primary: #C9D1D9;
+  /* GitHub/VS Code Dark Theme Colors */
+  --bg-primary:     #0D1117;
+  --bg-secondary:   #161B22;
+  --bg-tertiary:    #21262D;
+  --border-color:   #30363D;
+  --primary:        #58A6FF;
+  --primary-hover:  #1F6FEB;
+  --success:        #238636;
+  --danger:         #da3633;
+  --warning:        #d29922;
+  --text-primary:   #C9D1D9;
   --text-secondary: #8B949E;
-  --text-muted: #8B949E;
-  --border-color: #30363D;
-  --success-color: #238636;
-  --warning-color: #f59e0b;
-  --error-color: #ef4444;
+  --text-muted:     #6E7681;
 
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  /* Spacing Scale */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  24px;
+  --space-6:  32px;
+  --space-7:  48px;
+  --space-8:  64px;
+
+  /* Border Radius */
+  --radius-sm:   6px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.6);
+  --shadow-glow: 0 0 0 3px rgba(88,166,255,0.15);
+
+  /* Navbar height */
+  --navbar-h: 60px;
+
+  /* Layout */
+  --sidebar-w:  220px;
+  --feed-max:   600px;
+  --right-w:    280px;
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
   line-height: 1.6;
-  font-weight: 400;
-
   color: var(--text-primary);
-  background-color: var(--dark-bg);
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  background-color: var(--bg-primary);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: var(--primary-color);
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-a:hover {
-  text-decoration: underline;
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  background-color: var(--dark-bg);
+  background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
 }
 
-/* h1 styles removed to avoid conflicts with App.css */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+a:hover { color: var(--primary-hover); text-decoration: underline; }
 
-/* Button styles removed to avoid conflicts with App.css */
+img { display: block; max-width: 100%; }
+button { font-family: inherit; cursor: pointer; }
+input, textarea, select { font-family: inherit; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+@keyframes heartBeat {
+  0%   { transform: scale(1); }
+  14%  { transform: scale(1.3); }
+  28%  { transform: scale(1); }
+  42%  { transform: scale(1.3); }
+  70%  { transform: scale(1); }
+}
+
+.fade-in-up { animation: fadeInUp 0.4s ease-out both; }

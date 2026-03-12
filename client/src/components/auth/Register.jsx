@@ -2,299 +2,135 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+const getPasswordStrength = (pw) => {
+  if (!pw) return null;
+  if (pw.length < 6) return { label: 'Too short', cls: 'password-weak' };
+  const score = [/[A-Z]/, /[a-z]/, /\d/, /[^A-Za-z0-9]/].filter(r => r.test(pw)).length;
+  if (score <= 2) return { label: 'Weak',   cls: 'password-weak' };
+  if (score === 3) return { label: 'Medium', cls: 'password-medium' };
+  return { label: 'Strong', cls: 'password-strong' };
+};
+
 const Register = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    password2: '',
-  });
-  const [validationErrors, setValidationErrors] = useState({});
-  const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState('');
-
-  const { name, email, password, password2 } = formData;
-  const { register, isAuthenticated, error, loading, clearErrors } = useAuth();
   const navigate = useNavigate();
+  const { register, isAuthenticated, loading, error, clearErrors } = useAuth();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated]);
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    // Clear errors when component unmounts
-    return () => {
-      clearErrors();
-    };
-  }, []);
+  useEffect(() => { clearErrors(); }, []);
+  useEffect(() => { if (isAuthenticated) navigate('/dashboard', { replace: true }); }, [isAuthenticated]);
 
-  // Password strength checker
-  const checkPasswordStrength = (password) => {
-    if (!password) return '';
-    
-    let strength = 0;
-    
-    // Length check
-    if (password.length >= 8) strength += 1;
-    if (password.length >= 12) strength += 1;
-    
-    // Character variety checks
-    if (/[a-z]/.test(password)) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/[0-9]/.test(password)) strength += 1;
-    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-    
-    if (strength <= 2) return 'weak';
-    if (strength <= 4) return 'medium';
-    return 'strong';
+  const handleChange = (e) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    if (errors[e.target.name]) setErrors(prev => ({ ...prev, [e.target.name]: '' }));
   };
 
-  // Client-side validation
-  const validateForm = () => {
-    const errors = {};
-    
-    // Name validation
-    if (!name) {
-      errors.name = 'Name is required';
-    } else if (name.length < 2) {
-      errors.name = 'Name must be at least 2 characters';
-    } else if (name.length > 50) {
-      errors.name = 'Name must be less than 50 characters';
-    } else if (!/^[a-zA-Z\s]+$/.test(name)) {
-      errors.name = 'Name can only contain letters and spaces';
-    }
-    
-    // Email validation
-    if (!email) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-    
-    // Password validation
-    if (!password) {
-      errors.password = 'Password is required';
-    } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      errors.password = 'Password must contain at least one uppercase letter, lowercase letter, and number';
-    }
-    
-    // Confirm password validation
-    if (!password2) {
-      errors.password2 = 'Please confirm your password';
-    } else if (password !== password2) {
-      errors.password2 = 'Passwords do not match';
-    }
-    
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+  const validate = () => {
+    const errs = {};
+    if (!formData.name.trim() || formData.name.trim().length < 2) errs.name = 'Name must be at least 2 characters';
+    if (!/\S+@\S+\.\S+/.test(formData.email)) errs.email = 'Enter a valid email address';
+    if (formData.password.length < 6) errs.password = 'Password must be at least 6 characters';
+    if (formData.password !== formData.confirmPassword) errs.confirmPassword = 'Passwords do not match';
+    return errs;
   };
 
-  // Real-time validation
-  const validateField = (fieldName, value) => {
-    const errors = { ...validationErrors };
-    
-    switch (fieldName) {
-      case 'name':
-        if (!value) {
-          errors.name = 'Name is required';
-        } else if (value.length < 2) {
-          errors.name = 'Name must be at least 2 characters';
-        } else if (value.length > 50) {
-          errors.name = 'Name must be less than 50 characters';
-        } else if (!/^[a-zA-Z\s]+$/.test(value)) {
-          errors.name = 'Name can only contain letters and spaces';
-        } else {
-          delete errors.name;
-        }
-        break;
-        
-      case 'email':
-        if (!value) {
-          errors.email = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          errors.email = 'Please enter a valid email address';
-        } else {
-          delete errors.email;
-        }
-        break;
-        
-      case 'password':
-        if (!value) {
-          errors.password = 'Password is required';
-        } else if (value.length < 6) {
-          errors.password = 'Password must be at least 6 characters';
-        } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
-          errors.password = 'Password must contain at least one uppercase letter, lowercase letter, and number';
-        } else {
-          delete errors.password;
-        }
-        
-        // Update password strength
-        setPasswordStrength(checkPasswordStrength(value));
-        
-        // Revalidate password2 if it exists
-        if (formData.password2) {
-          if (value !== formData.password2) {
-            errors.password2 = 'Passwords do not match';
-          } else {
-            delete errors.password2;
-          }
-        }
-        break;
-        
-      case 'password2':
-        if (!value) {
-          errors.password2 = 'Please confirm your password';
-        } else if (formData.password !== value) {
-          errors.password2 = 'Passwords do not match';
-        } else {
-          delete errors.password2;
-        }
-        break;
-        
-      default:
-        break;
-    }
-    
-    setValidationErrors(errors);
-  };
-
-  const onChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    
-    // Real-time validation only if user has attempted to submit
-    if (submitAttempted) {
-      validateField(name, value);
-    }
-    
-    // Update password strength for password field
-    if (name === 'password') {
-      setPasswordStrength(checkPasswordStrength(value));
-    }
-    
-    // Clear server errors when user starts typing
-    if (error) {
-      clearErrors();
-    }
-  };
-
-  const onSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitAttempted(true);
-
-    if (validateForm()) {
-      await register({ name, email, password });
-    }
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setSubmitting(true);
+    await register({ name: formData.name.trim(), email: formData.email.toLowerCase(), password: formData.password });
+    setSubmitting(false);
   };
+
+  const strength = getPasswordStrength(formData.password);
+
+  if (loading && !submitting) return <div className="dc-spinner-page"><div className="dc-spinner"></div></div>;
 
   return (
-    <div className="auth-container">
-      <div className="auth-form">
-        <div className="auth-header">
-          <h1>Sign Up</h1>
-          <p>Create Your Account</p>
+    <div className="auth-page">
+      <div className="auth-card" style={{ maxWidth: 440 }}>
+        <div className="auth-card__logo">
+          <h1>DevConnector</h1>
+          <p>Create your developer profile</p>
         </div>
-        
-        {error && (
-          <div className="alert alert-danger">
-            {error === 'User already exists' || error.includes('already exists') ? (
-              <>
-                This email is already registered. <Link to="/login" className="alert-link">Login here</Link> instead.
-              </>
-            ) : (
-              error
-            )}
-          </div>
-        )}
-        
-        <form onSubmit={onSubmit}>
-          <div className={`form-group ${validationErrors.name ? 'error' : ''}`}>
+
+        {error && <div className="alert alert-danger">⚠️ {error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="name" className="form-label">Full Name <span className="required">*</span></label>
             <input
-              type="text"
-              placeholder="Name"
-              name="name"
-              value={name}
-              onChange={onChange}
-              className={validationErrors.name ? 'error' : ''}
+              id="name" name="name" type="text"
+              className={`form-control ${errors.name ? 'error' : ''}`}
+              placeholder="John Doe"
+              value={formData.name}
+              onChange={handleChange}
+              autoComplete="name"
             />
-            {validationErrors.name && (
-              <div className="field-error">{validationErrors.name}</div>
-            )}
+            {errors.name && <div className="field-error">⚠ {errors.name}</div>}
           </div>
-          
-          <div className={`form-group ${validationErrors.email ? 'error' : ''}`}>
+
+          <div className="form-group">
+            <label htmlFor="reg-email" className="form-label">Email <span className="required">*</span></label>
             <input
-              type="email"
-              placeholder="Email Address"
-              name="email"
-              value={email}
-              onChange={onChange}
-              className={validationErrors.email ? 'error' : ''}
+              id="reg-email" name="email" type="email"
+              className={`form-control ${errors.email ? 'error' : ''}`}
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              autoComplete="email"
             />
-            {validationErrors.email && (
-              <div className="field-error">{validationErrors.email}</div>
-            )}
-            <small className="form-text">
-              This site uses Gravatar so if you want a profile image, use a
-              Gravatar email
-            </small>
+            {errors.email && <div className="field-error">⚠ {errors.email}</div>}
           </div>
-          
-          <div className={`form-group ${validationErrors.password ? 'error' : ''}`}>
+
+          <div className="form-group">
+            <label htmlFor="reg-password" className="form-label">Password <span className="required">*</span></label>
+            <div style={{ position: 'relative' }}>
+              <input
+                id="reg-password" name="password"
+                type={showPassword ? 'text' : 'password'}
+                className={`form-control ${errors.password ? 'error' : ''}`}
+                placeholder="Min. 6 characters"
+                value={formData.password}
+                onChange={handleChange}
+                style={{ paddingRight: '44px' }}
+                autoComplete="new-password"
+              />
+              <button type="button" onClick={() => setShowPassword(p => !p)}
+                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem' }}>
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
+            {strength && <span className={`password-strength ${strength.cls}`}>{strength.label}</span>}
+            {errors.password && <div className="field-error">⚠ {errors.password}</div>}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmPassword" className="form-label">Confirm Password <span className="required">*</span></label>
             <input
-              type="password"
-              placeholder="Password"
-              name="password"
-              value={password}
-              onChange={onChange}
-              className={validationErrors.password ? 'error' : ''}
+              id="confirmPassword" name="confirmPassword"
+              type={showPassword ? 'text' : 'password'}
+              className={`form-control ${errors.confirmPassword ? 'error' : ''}`}
+              placeholder="Repeat your password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              autoComplete="new-password"
             />
-            {validationErrors.password && (
-              <div className="field-error">{validationErrors.password}</div>
-            )}
-            {password && (
-              <div className={`password-strength password-${passwordStrength}`}>
-                Password strength: {passwordStrength}
-              </div>
-            )}
+            {errors.confirmPassword && <div className="field-error">⚠ {errors.confirmPassword}</div>}
           </div>
-          
-          <div className={`form-group ${validationErrors.password2 ? 'error' : ''}`}>
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              name="password2"
-              value={password2}
-              onChange={onChange}
-              className={validationErrors.password2 ? 'error' : ''}
-            />
-            {validationErrors.password2 && (
-              <div className="field-error">{validationErrors.password2}</div>
-            )}
-          </div>
-          
-          <input
-            type="submit"
-            className="btn btn-primary"
-            value={loading ? 'Creating Account...' : 'Register'}
-            disabled={loading}
-          />
+
+          <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={submitting}>
+            {submitting ? <><div className="dc-spinner dc-spinner--sm" style={{ borderTopColor: '#fff' }}></div> Creating account...</> : '🚀 Create Account'}
+          </button>
         </form>
-        
-        <p className="auth-link">
-          Already have an account? <span 
-            onClick={() => navigate('/login')} 
-            className="link-text"
-            style={{ cursor: 'pointer', color: 'var(--primary-color)', textDecoration: 'underline' }}
-          >
-            Sign In
-          </span>
-        </p>
+
+        <div className="auth-card__footer">
+          Already have an account? <Link to="/login">Sign in</Link>
+        </div>
       </div>
     </div>
   );

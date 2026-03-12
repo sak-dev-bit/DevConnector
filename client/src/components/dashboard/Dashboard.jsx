@@ -1,271 +1,122 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    getCurrentProfile();
-  }, []);
+  useEffect(() => { fetchProfile(); }, []);
 
-  const getCurrentProfile = async () => {
+  const fetchProfile = async () => {
     try {
-      setLoading(true);
       const res = await api.get('/profile/me');
       setProfile(res.data);
-      setError(null);
     } catch (err) {
-      console.error('Error fetching profile:', err);
-      console.error('Error status:', err.response?.status);
-      console.error('Error data:', err.response?.data);
-      console.error('Error message:', err.message);
-      if (err.response?.status === 404) {
-        // No profile found - this is expected for new users
-        setProfile(null);
-      } else {
-        setError(err.response?.data?.msg || 'Failed to load profile');
+      if (err.response?.status !== 404) {
+        toast.error('Could not load profile');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const deleteProfile = async () => {
-    if (window.confirm('Are you sure? This action cannot be undone!')) {
-      try {
-        await api.delete('/profile');
-        setProfile(null);
-        alert('Profile deleted successfully');
-      } catch (err) {
-        console.error('Error deleting profile:', err);
-        setError(err.response?.data?.msg || 'Failed to delete profile');
-      }
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('⚠️ This will permanently delete your account. Are you sure?')) return;
+    try {
+      await api.delete('/profile');
+      toast.success('Account deleted');
+      window.location.href = '/';
+    } catch {
+      toast.error('Failed to delete account');
     }
   };
 
-  if (loading) {
-    return (
-      <div className="dashboard-container">
-        <div className="spinner-container">
-          <div className="spinner"></div>
-          <p>Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ padding: 'var(--space-5)' }}>
+      <div className="skeleton" style={{ height: 120, borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-4)' }} />
+      <div className="skeleton" style={{ height: 80, borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-3)' }} />
+      <div className="skeleton" style={{ height: 80, borderRadius: 'var(--radius-md)' }} />
+    </div>
+  );
 
   return (
-    <div className="instagram-layout">
-      {/* Instagram-style Top Navigation */}
-      <header className="instagram-header">
-        <div className="header-content">
-          <h1 className="brand-name">DevConnector</h1>
-          <div className="header-actions">
-            <button className="icon-btn">
-              <span className="emoji-icon">❤️</span>
-            </button>
-            <button className="icon-btn">
-              <span className="emoji-icon">💬</span>
-            </button>
+    <div>
+      {/* Welcome card */}
+      <div className="dc-card" style={{ padding: 'var(--space-5)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+        <div className="dc-avatar dc-avatar--xl">
+          {user?.avatar ? <img src={user.avatar} alt={user.name} /> : user?.name?.charAt(0)}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
+            Welcome back, {user?.name?.split(' ')[0]}! 👋
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            {profile ? `${profile.status}${profile.company ? ` at ${profile.company}` : ''}` : 'Complete your developer profile to get started.'}
+          </p>
+        </div>
+        {profile
+          ? <Link to="/profile" className="btn btn-secondary btn-sm">View Profile →</Link>
+          : <Link to="/create-profile" className="btn btn-primary btn-sm">Create Profile</Link>
+        }
+      </div>
+
+      {!profile && (
+        <div className="alert alert-info" style={{ marginBottom: 'var(--space-4)' }}>
+          🚀 You haven't created a profile yet.{' '}
+          <Link to="/create-profile" className="alert-link">Set one up now</Link> to connect with other developers!
+        </div>
+      )}
+
+      {/* Quick actions grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+        {[
+          { icon: '📰', title: 'Developer Feed',    desc: 'See what the community is sharing', link: '/posts',          btn: 'Open Feed' },
+          { icon: '👤', title: 'My Profile',         desc: 'View and manage your public profile', link: '/profile',      btn: 'View Profile' },
+          { icon: '✏️', title: 'Edit Profile',       desc: 'Update your bio, skills, and links', link: '/edit-profile',  btn: 'Edit Now' },
+          { icon: '💼', title: 'Add Experience',     desc: 'Showcase your work history',          link: '/add-experience',btn: 'Add Entry' },
+        ].map(({ icon, title, desc, link, btn }) => (
+          <div key={title} className="dc-card" style={{
+            padding: 'var(--space-4)',
+            display: 'flex', flexDirection: 'column', gap: 'var(--space-2)',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
+            cursor: 'default',
+          }}>
+            <div style={{ fontSize: '1.8rem' }}>{icon}</div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{title}</div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: 2, lineHeight: 1.5 }}>{desc}</div>
+            </div>
+            <Link to={link} className="btn btn-secondary btn-sm" style={{ marginTop: 'auto', alignSelf: 'flex-start' }}>{btn}</Link>
+          </div>
+        ))}
+      </div>
+
+      {/* Skills preview */}
+      {profile?.skills?.length > 0 && (
+        <div className="dc-card" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 'var(--space-3)' }}>
+            🛠️ Your Skills
+          </div>
+          <div className="skills-list">
+            {profile.skills.map((s, i) => <span key={i} className="skill-tag">{s}</span>)}
           </div>
         </div>
-      </header>
+      )}
 
-      <main className="instagram-main">
-        {/* Stories Section */}
-        <section className="stories-section">
-          <div className="stories-container">
-            <div className="story-item">
-              <div className="story-avatar">
-                <div className="avatar-circle-small">
-                  {user?.name?.charAt(0).toUpperCase()}
-                </div>
-                <div className="story-ring"></div>
-              </div>
-              <span className="story-label">Your story</span>
-            </div>
-            {/* Add more story items here */}
-          </div>
-        </section>
-
-        {error && (
-          <div className="alert alert-danger">
-            {error}
-          </div>
-        )}
-
-        <div className="feed-content">
-        {profile ? (
-          <div className="profile-exists">
-            <div className="card">
-              <h2>Your Profile</h2>
-              <div className="profile-info">
-                <div className="profile-header">
-                  <h3>{profile.user.name}</h3>
-                  <p className="status">{profile.status}</p>
-                  {profile.company && <p>at {profile.company}</p>}
-                  {profile.location && <p><span className="emoji-icon">📍</span>{profile.location}</p>}
-                </div>
-                
-                {profile.bio && (
-                  <div className="profile-bio">
-                    <h4>Bio</h4>
-                    <p>{profile.bio}</p>
-                  </div>
-                )}
-                
-                {profile.skills && profile.skills.length > 0 && (
-                  <div className="profile-skills">
-                    <h4>Skills</h4>
-                    <div className="skills-list">
-                      {profile.skills.map((skill, index) => (
-                        <span key={index} className="skill-badge">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {profile.githubusername && (
-                  <div className="github-info">
-                    <h4>GitHub</h4>
-                    <a 
-                      href={`https://github.com/${profile.githubusername}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="github-link"
-                    >
-                      @{profile.githubusername}
-                    </a>
-                  </div>
-                )}
-
-                {profile.social && Object.keys(profile.social).length > 0 && (
-                  <div className="social-links">
-                    <h4>Social Links</h4>
-                    <div className="social-buttons">
-                      {profile.social.twitter && (
-                        <a href={profile.social.twitter} target="_blank" rel="noopener noreferrer" className="social-btn twitter">
-                          Twitter
-                        </a>
-                      )}
-                      {profile.social.facebook && (
-                        <a href={profile.social.facebook} target="_blank" rel="noopener noreferrer" className="social-btn facebook">
-                          Facebook
-                        </a>
-                      )}
-                      {profile.social.linkedin && (
-                        <a href={profile.social.linkedin} target="_blank" rel="noopener noreferrer" className="social-btn linkedin">
-                          LinkedIn
-                        </a>
-                      )}
-                      {profile.social.youtube && (
-                        <a href={profile.social.youtube} target="_blank" rel="noopener noreferrer" className="social-btn youtube">
-                          YouTube
-                        </a>
-                      )}
-                      {profile.social.instagram && (
-                        <a href={profile.social.instagram} target="_blank" rel="noopener noreferrer" className="social-btn instagram">
-                          Instagram
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="profile-actions">
-                <Link to="/edit-profile" className="btn btn-primary">
-                  Edit Profile
-                </Link>
-                <button onClick={deleteProfile} className="btn btn-danger">
-                  Delete Profile
-                </button>
-              </div>
-            </div>
-
-            <div className="card">
-              <h2>Experience & Education</h2>
-              <div className="experience-education">
-                {profile.experience && profile.experience.length > 0 ? (
-                  <div className="experience-section">
-                    <h3>Experience</h3>
-                    {profile.experience.map((exp, index) => (
-                      <div key={index} className="experience-item">
-                        <h4>{exp.title}</h4>
-                        <p><strong>{exp.company}</strong></p>
-                        <p>{new Date(exp.from).toLocaleDateString()} - {exp.to ? new Date(exp.to).toLocaleDateString() : 'Present'}</p>
-                        {exp.description && <p>{exp.description}</p>}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p>No experience added yet.</p>
-                )}
-              </div>
-              <Link to="/add-experience" className="btn btn-primary">
-                Add Experience
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="no-profile">
-            <div className="card">
-              <h2>Welcome to DevConnector!</h2>
-              <p>You haven't created a profile yet. Let's get you started by creating your developer profile.</p>
-              <p>Your profile will help other developers connect with you and showcase your skills and experience.</p>
-              <Link to="/create-profile" className="btn btn-primary">
-                Create Profile
-              </Link>
-            </div>
-
-            <div className="card">
-              <h2>What you can do:</h2>
-              <ul className="feature-list">
-                <li><span className="emoji-icon">✨</span>Create your developer profile</li>
-                <li><span className="emoji-icon">💼</span>Add your experience and education</li>
-                <li><span className="emoji-icon">🔗</span>Connect your social media accounts</li>
-                <li><span className="emoji-icon">👥</span>Connect with other developers</li>
-                <li><span className="emoji-icon">📝</span>Share posts and thoughts</li>
-                <li><span className="emoji-icon">⭐</span>Showcase your GitHub repositories</li>
-              </ul>
-            </div>
-          </div>
-        )}
+      {/* Danger zone */}
+      <div className="dc-card" style={{ padding: 'var(--space-4)', borderColor: 'rgba(218,54,51,0.3)' }}>
+        <div style={{ fontWeight: 600, color: 'var(--danger)', marginBottom: 'var(--space-2)', fontSize: '0.875rem' }}>
+          ⚠️ Danger Zone
         </div>
-      </main>
-
-      {/* Instagram-style Bottom Navigation */}
-      <nav className="instagram-bottom-nav">
-        <Link to="/dashboard" className="nav-item active">
-          <span className="emoji-icon">🏠</span>
-          <span className="nav-label">Home</span>
-        </Link>
-        <Link to="/posts" className="nav-item">
-          <span className="emoji-icon">🔍</span>
-          <span className="nav-label">Search</span>
-        </Link>
-        <Link to="/create-profile" className="nav-item">
-          <span className="emoji-icon">➕</span>
-          <span className="nav-label">Create</span>
-        </Link>
-        <Link to="/profile" className="nav-item">
-          <span className="emoji-icon">👤</span>
-          <span className="nav-label">Profile</span>
-        </Link>
-      </nav>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 'var(--space-3)' }}>
+          Permanently delete your account, profile, and all posts. This cannot be undone.
+        </p>
+        <button className="btn btn-danger btn-sm" onClick={handleDeleteAccount}>Delete Account</button>
+      </div>
     </div>
   );
 };

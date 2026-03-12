@@ -1,187 +1,99 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [validationErrors, setValidationErrors] = useState({});
-  const [submitAttempted, setSubmitAttempted] = useState(false);
-
-  const { email, password } = formData;
-  const { login, isAuthenticated, error, loading, clearErrors } = useAuth();
   const navigate = useNavigate();
+  const { login, isAuthenticated, loading, error, clearErrors } = useAuth();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated]);
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    // Clear errors when component unmounts
-    return () => {
-      clearErrors();
-    };
-  }, []);
+  useEffect(() => { clearErrors(); }, []);
+  useEffect(() => { if (isAuthenticated) navigate('/dashboard', { replace: true }); }, [isAuthenticated]);
 
-  // Client-side validation
-  const validateForm = () => {
-    const errors = {};
-    
-    // Email validation
-    if (!email) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-    
-    // Password validation
-    if (!password) {
-      errors.password = 'Password is required';
-    } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-    }
-    
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  // Real-time validation
-  const validateField = (name, value) => {
-    const errors = { ...validationErrors };
-    
-    switch (name) {
-      case 'email':
-        if (!value) {
-          errors.email = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          errors.email = 'Please enter a valid email address';
-        } else {
-          delete errors.email;
-        }
-        break;
-      
-      case 'password':
-        if (!value) {
-          errors.password = 'Password is required';
-        } else if (value.length < 6) {
-          errors.password = 'Password must be at least 6 characters';
-        } else {
-          delete errors.password;
-        }
-        break;
-        
-      default:
-        break;
-    }
-    
-    setValidationErrors(errors);
-  };
-
-  // Clear errors when user types
-  const clearErrorsOnType = useCallback(() => {
-    if (error) clearErrors();
-  }, [error, clearErrors]);
-
-  const onChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    
-    // Real-time validation only if user has attempted to submit
-    if (submitAttempted) {
-      validateField(name, value);
-    }
-    
-    // Clear server errors when user types
-    clearErrorsOnType();
-  };
-
-  const onSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitAttempted(true);
-
-    if (validateForm()) {
-      await login({ email, password });
-    }
+    setSubmitting(true);
+    await login(formData);
+    setSubmitting(false);
   };
+
+  if (loading && !submitting) return (
+    <div className="dc-spinner-page"><div className="dc-spinner"></div></div>
+  );
 
   return (
-    <div className="auth-container">
-      <div className="auth-form">
-        <div className="auth-header">
-          <h1>Sign In</h1>
-          <p>Sign Into Your Account</p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-card__logo">
+          <h1>DevConnector</h1>
+          <p>Sign in to your account</p>
         </div>
-        
-        {error && (
-          <div className="alert alert-danger">
-            {error === 'Invalid credentials' ? (
-              <>
-                Invalid email or password. Please try again or <Link to="/register" className="alert-link">create an account</Link>.
-              </>
-            ) : error.includes('Too many authentication attempts') ? (
-              <>
-                Too many login attempts. Please try again later or <Link to="/register" className="alert-link">create a new account</Link>.
-              </>
-            ) : (
-              error
-            )}
-          </div>
-        )}
-        
-        <form onSubmit={onSubmit}>
-          <div className={`form-group ${validationErrors.email ? 'error' : ''}`}>
+
+        {error && <div className="alert alert-danger">⚠️ {error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label" htmlFor="email">Email address</label>
             <input
+              id="email"
+              className="form-control"
               type="email"
-              placeholder="Email Address"
               name="email"
-              value={email}
-              onChange={onChange}
-              className={validationErrors.email ? 'error' : ''}
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              autoComplete="email"
             />
-            {validationErrors.email && (
-              <div className="field-error">{validationErrors.email}</div>
-            )}
           </div>
-          
-          <div className={`form-group ${validationErrors.password ? 'error' : ''}`}>
-            <input
-              type="password"
-              placeholder="Password"
-              name="password"
-              value={password}
-              onChange={onChange}
-              className={validationErrors.password ? 'error' : ''}
-            />
-            {validationErrors.password && (
-              <div className="field-error">{validationErrors.password}</div>
-            )}
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="password">
+              Password
+              <Link to="/forgot-password" style={{ float: 'right', fontSize: '0.8rem', fontWeight: 500 }}>
+                Forgot password?
+              </Link>
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                id="password"
+                className="form-control"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                autoComplete="current-password"
+                style={{ paddingRight: '44px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(p => !p)}
+                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem' }}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
-          
-          <input
+
+          <button
             type="submit"
-            className="btn btn-primary"
-            value={loading ? 'Signing In...' : 'Login'}
-            disabled={loading}
-          />
-        </form>
-        
-        <div className="forgot-password">
-          <Link to="/forgot-password">Forgot Password?</Link>
-        </div>
-        
-        <p className="auth-link">
-          Don't have an account? <span 
-            onClick={() => navigate('/register')} 
-            className="link-text"
-            style={{ cursor: 'pointer', color: 'var(--primary-color)', textDecoration: 'underline' }}
+            className="btn btn-primary btn-full btn-lg"
+            disabled={submitting}
           >
-            Sign Up
-          </span>
-        </p>
+            {submitting ? <><div className="dc-spinner dc-spinner--sm" style={{ borderTopColor: '#fff' }}></div> Signing in...</> : 'Sign In'}
+          </button>
+        </form>
+
+        <div className="auth-card__footer">
+          Don't have an account? <Link to="/register">Sign up for free</Link>
+        </div>
       </div>
     </div>
   );
