@@ -37,7 +37,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Skip refresh for auth endpoints to avoid loops
-    const isAuthRoute = originalRequest.url?.includes('/auth/');
+    const isAuthRoute = originalRequest.url?.includes('/auth');
 
     // If error is 401, we haven't retried yet, and it's NOT an auth route
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {

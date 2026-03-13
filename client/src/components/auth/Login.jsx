@@ -22,7 +22,7 @@ const Login = () => {
     setSubmitting(false);
   };
 
-  if (loading && !submitting) return (
+  if (loading && !submitting && !formData.email) return (
     <div className="dc-spinner-page"><div className="dc-spinner"></div></div>
   );
 

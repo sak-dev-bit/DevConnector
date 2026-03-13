@@ -528,4 +528,100 @@ router.post('/avatar', [auth, upload.single('avatar')], async (req, res) => {
     }
 });
 
+/**
+ * @route    PUT /api/profile/experience
+ * @desc     Add profile experience
+ * @access   Private
+ */
+router.put('/experience', [auth, validate(profileSchemas.experience)], async (req, res) => {
+    try {
+        const profile = await Profile.findOne({ user: req.user.id });
+
+        if (!profile) {
+            return res.status(404).json({ success: false, msg: 'Profile not found' });
+        }
+
+        profile.experience.unshift(req.body);
+        await profile.save();
+
+        res.json(profile);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ success: false, msg: 'Server error while adding experience' });
+    }
+});
+
+/**
+ * @route    DELETE /api/profile/experience/:exp_id
+ * @desc     Delete experience from profile
+ * @access   Private
+ */
+router.delete('/experience/:exp_id', auth, async (req, res) => {
+    try {
+        const profile = await Profile.findOne({ user: req.user.id });
+
+        if (!profile) {
+            return res.status(404).json({ success: false, msg: 'Profile not found' });
+        }
+
+        profile.experience = profile.experience.filter(
+            exp => exp._id.toString() !== req.params.exp_id
+        );
+
+        await profile.save();
+        res.json(profile);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ success: false, msg: 'Server error while deleting experience' });
+    }
+});
+
+/**
+ * @route    PUT /api/profile/education
+ * @desc     Add profile education
+ * @access   Private
+ */
+router.put('/education', [auth, validate(profileSchemas.education)], async (req, res) => {
+    try {
+        const profile = await Profile.findOne({ user: req.user.id });
+
+        if (!profile) {
+            return res.status(404).json({ success: false, msg: 'Profile not found' });
+        }
+
+        profile.education.unshift(req.body);
+        await profile.save();
+
+        res.json(profile);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ success: false, msg: 'Server error while adding education' });
+    }
+});
+
+/**
+ * @route    DELETE /api/profile/education/:edu_id
+ * @desc     Delete education from profile
+ * @access   Private
+ */
+router.delete('/education/:edu_id', auth, async (req, res) => {
+    try {
+        const profile = await Profile.findOne({ user: req.user.id });
+
+        if (!profile) {
+            return res.status(404).json({ success: false, msg: 'Profile not found' });
+        }
+
+        profile.education = profile.education.filter(
+            edu => edu._id.toString() !== req.params.edu_id
+        );
+
+        await profile.save();
+        res.json(profile);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ success: false, msg: 'Server error while deleting education' });
+    }
+});
+
 module.exports = router;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import ImageUpload from '../layout/ImageUpload';
 import toast from 'react-hot-toast';
 
 const timeAgo = (date) => {
@@ -33,6 +34,7 @@ const PostFeed = () => {
   const [submitting, setSubmitting] = useState(false);
   const [commentInputs, setCommentInputs] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
+  const [postImage, setPostImage] = useState(null);
   const textareaRef = useRef();
 
   useEffect(() => { fetchPosts(); }, []);
@@ -56,9 +58,13 @@ const PostFeed = () => {
       setSubmitting(true);
       const formData = new FormData();
       formData.append('text', newPost.trim());
+      if (postImage) {
+        formData.append('image', postImage);
+      }
       const res = await api.post('/posts', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setPosts(prev => [res.data.post, ...prev]);
       setNewPost('');
+      setPostImage(null);
       toast.success('Post published!');
     } catch (err) {
       toast.error(err.response?.data?.msg || 'Failed to publish post');
@@ -113,6 +119,13 @@ const PostFeed = () => {
             maxLength={1000}
             onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleSubmitPost(e); }}
           />
+          <div style={{ padding: '0 var(--space-3)' }}>
+            <ImageUpload 
+              currentImage={null} 
+              onUploadSuccess={(file) => setPostImage(file)}
+              type="post"
+            />
+          </div>
           <div className="create-post__bottom">
             <span className="char-count" style={{ color: newPost.length > 900 ? 'var(--danger)' : undefined }}>
               {newPost.length}/1000

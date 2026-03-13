@@ -52,8 +52,10 @@ router.post('/register', validate(authSchemas.register), async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
+    console.log('Checking for existing user...');
     let user = await User.findOne({ email: email.toLowerCase() });
     if (user) {
+      console.log('User already exists:', email);
       return res.status(400).json({
         success: false,
         msg: 'User already exists with this email'
@@ -66,14 +68,19 @@ router.post('/register', validate(authSchemas.register), async (req, res) => {
       password
     });
 
+    console.log('Hashing password...');
     const salt = await bcrypt.genSalt(12);
     user.password = await bcrypt.hash(password, salt);
 
+    console.log('Generating tokens...');
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
     user.refreshTokens = [refreshToken];
+    
+    console.log('Saving user...');
     await user.save();
+    console.log('User saved successfully');
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -91,6 +98,8 @@ router.post('/register', validate(authSchemas.register), async (req, res) => {
         email: user.email
       }
     });
+
+    console.log('Registration response sent for:', email);
 
   } catch (err) {
     console.error('Registration error:', err.message);
@@ -133,20 +142,21 @@ router.post('/login', validate(authSchemas.login), async (req, res) => {
     }
 
     const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    const newRefreshToken = generateRefreshToken(user);
 
-    // Filter out expired/old tokens and add new one
-    // For simplicity here, we're just adding the new one. 
-    // In a full implementation, you'd periodically clean this up.
-    user.refreshTokens.push(refreshToken);
-    await user.save();
+    // Atomic update to avoid VersionError
+    await User.findByIdAndUpdate(user._id, {
+      $push: { refreshTokens: newRefreshToken }
+    });
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
+
+    console.log('Login successful:', { id: user.id, email: user.email });
 
     res.json({
       success: true,
@@ -180,54 +190,51 @@ router.post('/refresh', async (req, res) => {
 
     // Detected refresh token reuse!
     if (!user) {
-      jwt.verify(
-        refreshToken,
-        process.env.REFRESH_TOKEN_SECRET,
-        async (err, decoded) => {
-          if (err) return; // Expired or invalid anyway
-          // If we find an old token being reused, it's a security risk. 
-          // We could invalidate ALL tokens for that user ID.
-          const hackedUser = await User.findById(decoded.user.id);
-          if (hackedUser) {
-            hackedUser.refreshTokens = [];
-            await hackedUser.save();
-          }
-        }
-      );
-      return res.sendStatus(403); // Forbidden
+      try {
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        // Token is valid but not in DB — possible token theft. Invalidate all tokens for that user.
+        await User.findByIdAndUpdate(decoded.user.id, { $set: { refreshTokens: [] } });
+      } catch (e) {
+        // Token is expired/invalid anyway — ignore
+      }
+      return res.status(403).json({ success: false, msg: 'Forbidden' });
     }
 
-    const newRefreshTokens = user.refreshTokens.filter(rt => rt !== refreshToken);
+    // Verify the JWT synchronously
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    } catch (e) {
+      // Token expired or invalid — remove it from user's tokens
+      await User.findByIdAndUpdate(user._id, { $pull: { refreshTokens: refreshToken } });
+      return res.status(403).json({ success: false, msg: 'Invalid refresh token' });
+    }
 
-    // evaluate jwt 
-    jwt.verify(
-      refreshToken,
-      process.env.REFRESH_TOKEN_SECRET,
-      async (err, decoded) => {
-        if (err || user.id !== decoded.user.id) {
-          user.refreshTokens = [...newRefreshTokens];
-          await user.save();
-          return res.status(403).json({ success: false, msg: 'Invalid refresh token' });
-        }
+    if (user.id !== decoded.user.id) {
+      await User.findByIdAndUpdate(user._id, { $pull: { refreshTokens: refreshToken } });
+      return res.status(403).json({ success: false, msg: 'Invalid refresh token' });
+    }
 
-        // Refresh token is valid
-        const accessToken = generateAccessToken(user);
-        const newRefreshToken = generateRefreshToken(user);
+    // Refresh token is valid — rotate it
+    const accessToken = generateAccessToken(user);
+    const newRefreshToken = generateRefreshToken(user);
 
-        // Update DB with new refresh token
-        user.refreshTokens = [...newRefreshTokens, newRefreshToken];
-        await user.save();
+    // Atomic update: remove old token, add new one (avoids VersionError)
+    await User.findByIdAndUpdate(user._id, {
+      $pull: { refreshTokens: refreshToken },
+    });
+    await User.findByIdAndUpdate(user._id, {
+      $push: { refreshTokens: newRefreshToken },
+    });
 
-        res.cookie('refreshToken', newRefreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
 
-        res.json({ success: true, token: accessToken });
-      }
-    );
+    res.json({ success: true, token: accessToken });
   } catch (err) {
     console.error('Refresh token error:', err.message);
     res.status(500).json({ success: false, msg: 'Server error during refresh' });

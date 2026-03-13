@@ -3,12 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
-const AddExperience = () => {
+const AddEducation = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
-        company: '',
-        title: '',
-        location: '',
+        school: '',
+        degree: '',
+        fieldofstudy: '',
         from: '',
         to: '',
         current: false,
@@ -17,7 +17,7 @@ const AddExperience = () => {
 
     const [loading, setLoading] = useState(false);
 
-    const { company, title, location, from, to, current, description } = formData;
+    const { school, degree, fieldofstudy, from, to, current, description } = formData;
 
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
 
@@ -25,11 +25,11 @@ const AddExperience = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.put('/profile/experience', formData);
-            toast.success('Experience added!');
+            await api.put('/profile/education', formData);
+            toast.success('Education added!');
             navigate('/profile');
         } catch (err) {
-            toast.error(err.response?.data?.msg || 'Failed to add experience');
+            toast.error(err.response?.data?.msg || 'Failed to add education');
         } finally {
             setLoading(false);
         }
@@ -39,8 +39,8 @@ const AddExperience = () => {
         <div className="profile-form-container">
             <div className="profile-form">
                 <div className="form-header">
-                    <h1>Add An Experience</h1>
-                    <p>Add any developer/programming positions that you have had in the past</p>
+                    <h1>Add Your Education</h1>
+                    <p>Add any school, bootcamp, etc that you have attended</p>
                     <small>* = required field</small>
                 </div>
 
@@ -48,9 +48,9 @@ const AddExperience = () => {
                     <div className="form-group">
                         <input
                             type="text"
-                            placeholder="* Job Title"
-                            name="title"
-                            value={title}
+                            placeholder="* School or Bootcamp"
+                            name="school"
+                            value={school}
                             onChange={onChange}
                             required
                         />
@@ -58,9 +58,9 @@ const AddExperience = () => {
                     <div className="form-group">
                         <input
                             type="text"
-                            placeholder="* Company"
-                            name="company"
-                            value={company}
+                            placeholder="* Degree or Certificate"
+                            name="degree"
+                            value={degree}
                             onChange={onChange}
                             required
                         />
@@ -68,9 +68,9 @@ const AddExperience = () => {
                     <div className="form-group">
                         <input
                             type="text"
-                            placeholder="Location"
-                            name="location"
-                            value={location}
+                            placeholder="Field of Study"
+                            name="fieldofstudy"
+                            value={fieldofstudy}
                             onChange={onChange}
                         />
                     </div>
@@ -92,9 +92,9 @@ const AddExperience = () => {
                                 checked={current}
                                 value={current}
                                 onChange={onChange}
-                                id="current-job"
+                                id="current-edu"
                             />{' '}
-                            <label htmlFor="current-job" className="form-label" style={{ marginBottom: 0 }}>Current Job</label>
+                            <label htmlFor="current-edu" className="form-label" style={{ marginBottom: 0 }}>Current School</label>
                         </div>
                     </div>
                     <div className="form-group">
@@ -112,14 +112,14 @@ const AddExperience = () => {
                             name="description"
                             cols="30"
                             rows="5"
-                            placeholder="Job Description"
+                            placeholder="Program Description"
                             value={description}
                             onChange={onChange}
                         ></textarea>
                     </div>
                     <div className="form-actions">
                         <button type="submit" className="btn btn-primary" disabled={loading}>
-                            {loading ? 'Adding...' : 'Add Experience'}
+                            {loading ? 'Adding...' : 'Add Education'}
                         </button>
                         <Link className="btn btn-light" to="/profile">Go Back</Link>
                     </div>
@@ -129,4 +129,4 @@ const AddExperience = () => {
     );
 };
 
-export default AddExperience;
+export default AddEducation;

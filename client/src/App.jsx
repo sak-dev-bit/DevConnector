@@ -13,6 +13,7 @@ import PrivateRoute from './components/layout/PrivateRoute';
 import ThreeBackground from './components/ThreeBackground';
 import ForgotPassword from './pages/ForgotPassword';
 import AddExperience from './pages/AddExperience';
+import AddEducation from './pages/AddEducation';
 import './App.css';
 
 /* ─── Navbar ───────────────────────────────────── */
@@ -68,6 +69,9 @@ const Sidebar = () => {
         <NavLink to="/add-experience" className={({ isActive }) => `dc-sidebar__link ${isActive ? 'active' : ''}`}>
           <span className="dc-sidebar__icon">💼</span><span>Experience</span>
         </NavLink>
+        <NavLink to="/add-education" className={({ isActive }) => `dc-sidebar__link ${isActive ? 'active' : ''}`}>
+          <span className="dc-sidebar__icon">🎓</span><span>Education</span>
+        </NavLink>
       </nav>
     </aside>
   );
@@ -98,6 +102,10 @@ const RightPanel = () => (
       <div className="dc-widget__item">
         <span>💼</span>
         <Link to="/add-experience" style={{ textDecoration: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Add Experience</Link>
+      </div>
+      <div className="dc-widget__item">
+        <span>🎓</span>
+        <Link to="/add-education" style={{ textDecoration: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Add Education</Link>
       </div>
     </div>
   </aside>
@@ -172,6 +180,9 @@ function App() {
           } />
           <Route path="/add-experience" element={
             <PrivateRoute><AddExperience /></PrivateRoute>
+          } />
+          <Route path="/add-education" element={
+            <PrivateRoute><AddEducation /></PrivateRoute>
           } />
         </Routes>
       </Router>

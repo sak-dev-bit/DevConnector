@@ -23,6 +23,26 @@ const Profile = () => {
     }
   };
 
+  const deleteExperience = async (id) => {
+    try {
+      if (!window.confirm('Delete this experience?')) return;
+      const res = await api.delete(`/profile/experience/${id}`);
+      setProfile(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteEducation = async (id) => {
+    try {
+      if (!window.confirm('Delete this education?')) return;
+      const res = await api.delete(`/profile/education/${id}`);
+      setProfile(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (loading) return (
     <div style={{ padding: 'var(--space-5)' }}>
       <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-4)' }} />
@@ -61,6 +81,7 @@ const Profile = () => {
           <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
             <Link to="/edit-profile" className="btn btn-secondary btn-sm">✏️ Edit Profile</Link>
             <Link to="/add-experience" className="btn btn-ghost btn-sm">+ Experience</Link>
+            <Link to="/add-education" className="btn btn-ghost btn-sm">+ Education</Link>
           </div>
           <div className="profile-stats">
             <div className="stat-item">
@@ -131,7 +152,14 @@ const Profile = () => {
             <div className="profile-section__head">💼 Experience</div>
             <div>
               {profile.experience.map((exp, i) => (
-                <div key={i} className="experience-item">
+                <div key={i} className="experience-item" style={{ position: 'relative' }}>
+                  <button 
+                    onClick={() => deleteExperience(exp._id)}
+                    style={{ position: 'absolute', top: 0, right: 0, background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem' }}
+                    title="Delete Experience"
+                  >
+                    ×
+                  </button>
                   <div className="experience-item__title">{exp.title}</div>
                   <div className="experience-item__company">{exp.company}</div>
                   <div className="experience-item__dates">
@@ -151,7 +179,14 @@ const Profile = () => {
             <div className="profile-section__head">🎓 Education</div>
             <div>
               {profile.education.map((edu, i) => (
-                <div key={i} className="experience-item">
+                <div key={i} className="experience-item" style={{ position: 'relative' }}>
+                  <button 
+                    onClick={() => deleteEducation(edu._id)}
+                    style={{ position: 'absolute', top: 0, right: 0, background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem' }}
+                    title="Delete Education"
+                  >
+                    ×
+                  </button>
                   <div className="experience-item__title">{edu.school}</div>
                   <div className="experience-item__company">{edu.degree}{edu.fieldofstudy && ` — ${edu.fieldofstudy}`}</div>
                   <div className="experience-item__dates">

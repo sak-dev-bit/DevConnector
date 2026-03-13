@@ -78,6 +78,7 @@ const Dashboard = () => {
           { icon: '👤', title: 'My Profile',         desc: 'View and manage your public profile', link: '/profile',      btn: 'View Profile' },
           { icon: '✏️', title: 'Edit Profile',       desc: 'Update your bio, skills, and links', link: '/edit-profile',  btn: 'Edit Now' },
           { icon: '💼', title: 'Add Experience',     desc: 'Showcase your work history',          link: '/add-experience',btn: 'Add Entry' },
+          { icon: '🎓', title: 'Add Education',      desc: 'List your schools and degrees',        link: '/add-education', btn: 'Add Entry' },
         ].map(({ icon, title, desc, link, btn }) => (
           <div key={title} className="dc-card" style={{
             padding: 'var(--space-4)',

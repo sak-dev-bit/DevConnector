@@ -38,6 +38,28 @@ const profileSchemas = {
             instagram: z.string().url('Invalid URL').optional().or(z.literal('')),
         }),
     }),
+    experience: z.object({
+        body: z.object({
+            title: z.string().min(1, 'Title is required'),
+            company: z.string().min(1, 'Company is required'),
+            location: z.string().optional(),
+            from: z.string().min(1, 'From date is required'),
+            to: z.string().optional(),
+            current: z.boolean().optional(),
+            description: z.string().optional(),
+        }),
+    }),
+    education: z.object({
+        body: z.object({
+            school: z.string().min(1, 'School is required'),
+            degree: z.string().min(1, 'Degree is required'),
+            fieldofstudy: z.string().min(1, 'Field of study is required'),
+            from: z.string().min(1, 'From date is required'),
+            to: z.string().optional(),
+            current: z.boolean().optional(),
+            description: z.string().optional(),
+        }),
+    }),
 };
 
 const postSchemas = {

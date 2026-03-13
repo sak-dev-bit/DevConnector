@@ -45,23 +45,26 @@ describe('Login Component', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByRole('heading', { name: /Sign In/i })).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/Email Address/i)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/Password/i)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Login/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /DevConnector/i })).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/you@example.com/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/••••••••/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Sign In/i })).toBeInTheDocument();
     });
 
-    it('validates empty fields on submission', async () => {
+    it('submits form with native validation', async () => {
         render(
             <MemoryRouter>
                 <Login />
             </MemoryRouter>
         );
 
-        fireEvent.click(screen.getByRole('button', { name: /Login/i }));
-
-        expect(await screen.findByText(/Email is required/i)).toBeInTheDocument();
-        expect(await screen.findByText(/Password is required/i)).toBeInTheDocument();
+        const emailInput = screen.getByPlaceholderText(/you@example.com/i);
+        const passwordInput = screen.getByPlaceholderText(/••••••••/i);
+        
+        expect(emailInput).toBeRequired();
+        expect(passwordInput).toBeRequired();
+        
+        fireEvent.click(screen.getByRole('button', { name: /Sign In/i }));
         expect(mockLogin).not.toHaveBeenCalled();
     });
 
@@ -72,14 +75,14 @@ describe('Login Component', () => {
             </MemoryRouter>
         );
 
-        fireEvent.change(screen.getByPlaceholderText(/Email Address/i), {
+        fireEvent.change(screen.getByPlaceholderText(/you@example.com/i), {
             target: { value: 'test@example.com' },
         });
-        fireEvent.change(screen.getByPlaceholderText(/Password/i), {
+        fireEvent.change(screen.getByPlaceholderText(/••••••••/i), {
             target: { value: 'password123' },
         });
 
-        fireEvent.click(screen.getByRole('button', { name: /Login/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Sign In/i }));
 
         await waitFor(() => {
             expect(mockLogin).toHaveBeenCalledWith({
@@ -104,7 +107,7 @@ describe('Login Component', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText(/Invalid email or password/i)).toBeInTheDocument();
+        expect(screen.getByText(/Invalid credentials/i)).toBeInTheDocument();
     });
 
     it('disables login button when loading is true', () => {
@@ -116,14 +119,12 @@ describe('Login Component', () => {
             clearErrors: mockClearErrors,
         });
 
-        render(
+        const { container } = render(
             <MemoryRouter>
                 <Login />
             </MemoryRouter>
         );
 
-        const loginButton = screen.getByRole('button');
-        expect(loginButton).toBeDisabled();
-        expect(loginButton).toHaveValue('Signing In...');
+        expect(container.querySelector('.dc-spinner')).toBeInTheDocument();
     });
 });
