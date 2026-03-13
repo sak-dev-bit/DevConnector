@@ -2,13 +2,12 @@ const socketIo = require('socket.io');
 
 let io;
 const users = new Map(); // Store userId -> socketId mapping
+const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
 
 const initSocket = (server) => {
     io = socketIo(server, {
         cors: {
-            origin: process.env.NODE_ENV === 'production'
-                ? process.env.CLIENT_URL
-                : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+            origin: allowedOrigin,
             credentials: true
         }
     });

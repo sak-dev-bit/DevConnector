@@ -13,6 +13,13 @@ if (!process.env.JWT_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
   throw new Error('JWT_SECRET and REFRESH_TOKEN_SECRET environment variables are required');
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
+};
+
 // Token helper functions
 const generateAccessToken = (user) => {
   if (!process.env.JWT_SECRET) console.error('JWT_SECRET IS MISSING!');
@@ -83,9 +90,7 @@ router.post('/register', validate(authSchemas.register), async (req, res) => {
     console.log('User saved successfully');
 
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -150,9 +155,7 @@ router.post('/login', validate(authSchemas.login), async (req, res) => {
     });
 
     res.cookie('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -228,9 +231,7 @@ router.post('/refresh', async (req, res) => {
     });
 
     res.cookie('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
@@ -259,9 +260,7 @@ router.post('/logout', async (req, res) => {
     }
 
     res.clearCookie('refreshToken', {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production'
+      ...cookieOptions
     });
     res.json({ success: true, msg: 'Logged out successfully' });
   } catch (err) {

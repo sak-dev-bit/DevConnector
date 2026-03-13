@@ -1,6 +1,8 @@
 import axios from 'axios';
 
 let accessToken = null;
+const apiOrigin = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+export const apiBaseUrl = apiOrigin ? `${apiOrigin}/api` : '/api';
 
 export const setAccessToken = (token) => {
   accessToken = token;
@@ -8,7 +10,7 @@ export const setAccessToken = (token) => {
 
 // Create a new Axios instance with base configuration
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -45,7 +47,7 @@ api.interceptors.response.use(
 
       try {
         // Attempt to refresh token
-        const res = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+        const res = await axios.post(`${apiBaseUrl}/auth/refresh`, {}, { withCredentials: true });
 
         if (res.data.success) {
           const { token } = res.data;

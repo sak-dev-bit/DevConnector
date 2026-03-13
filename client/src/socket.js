@@ -1,11 +1,12 @@
 import { io } from 'socket.io-client';
 
 let socket;
+const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const initSocket = (userId) => {
     if (socket) return socket;
 
-    socket = io(window.location.origin.replace('5173', '5000').replace('5174', '5000').replace('5175', '5000'), {
+    socket = io(socketUrl, {
         withCredentials: true,
     });
 

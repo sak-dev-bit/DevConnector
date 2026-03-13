@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import api, { setAccessToken } from '../services/api';
+import api, { apiBaseUrl, setAccessToken } from '../services/api';
 import axios from 'axios';
 import { initSocket, disconnectSocket } from '../socket';
 import toast from 'react-hot-toast';
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }) => {
   // Silent refresh on mount
   const checkAuth = async () => {
     try {
-      const res = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+      const res = await axios.post(`${apiBaseUrl}/auth/refresh`, {}, { withCredentials: true });
       if (res.data.success) {
         setAccessToken(res.data.token);
         // Load user data (this will dispatch USER_LOADED and init socket)

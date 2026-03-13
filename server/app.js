@@ -9,6 +9,7 @@ const helmet = require('helmet');
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
+const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
 
 // Security Middleware
 if (process.env.NODE_ENV !== 'test') {
@@ -17,9 +18,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 // CORS configuration
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production'
-        ? process.env.CLIENT_URL
-        : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+    origin: allowedOrigin,
     credentials: true
 }));
 
